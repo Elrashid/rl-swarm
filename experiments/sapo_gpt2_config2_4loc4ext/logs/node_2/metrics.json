@@ -1,0 +1,10 @@
+{"timestamp": 1762427483.9519055, "round": 0, "stage": 1, "node_id": "node_2", "experiment": "sapo_gpt2_config2_4loc4ext", "my_reward": 1.08, "total_agents": 1, "peer_id": "node_2"}
+{"timestamp": 1762427561.4927456, "round": 1, "stage": 1, "node_id": "node_2", "experiment": "sapo_gpt2_config2_4loc4ext", "my_reward": 0.0, "total_agents": 1, "peer_id": "node_2"}
+{"timestamp": 1762427605.9165812, "round": 2, "stage": 1, "node_id": "node_2", "experiment": "sapo_gpt2_config2_4loc4ext", "my_reward": 0.0, "total_agents": 1, "peer_id": "node_2"}
+{"timestamp": 1762427666.3288734, "round": 3, "stage": 1, "node_id": "node_2", "experiment": "sapo_gpt2_config2_4loc4ext", "my_reward": 0.0, "total_agents": 1, "peer_id": "node_2"}
+{"timestamp": 1762427725.5642626, "round": 4, "stage": 1, "node_id": "node_2", "experiment": "sapo_gpt2_config2_4loc4ext", "my_reward": 0.0, "total_agents": 1, "peer_id": "node_2"}
+{"timestamp": 1762427786.5677476, "round": 5, "stage": 1, "node_id": "node_2", "experiment": "sapo_gpt2_config2_4loc4ext", "my_reward": 0.0, "total_agents": 1, "peer_id": "node_2"}
+{"timestamp": 1762427847.5021937, "round": 6, "stage": 1, "node_id": "node_2", "experiment": "sapo_gpt2_config2_4loc4ext", "my_reward": 0.0, "total_agents": 1, "peer_id": "node_2"}
+{"timestamp": 1762427907.726942, "round": 7, "stage": 1, "node_id": "node_2", "experiment": "sapo_gpt2_config2_4loc4ext", "my_reward": 1.08, "total_agents": 1, "peer_id": "node_2"}
+{"timestamp": 1762427966.2938237, "round": 8, "stage": 1, "node_id": "node_2", "experiment": "sapo_gpt2_config2_4loc4ext", "my_reward": 1.16, "total_agents": 1, "peer_id": "node_2"}
+{"timestamp": 1762428022.5532749, "round": 9, "stage": 1, "node_id": "node_2", "experiment": "sapo_gpt2_config2_4loc4ext", "my_reward": 0.0, "total_agents": 1, "peer_id": "node_2"}
