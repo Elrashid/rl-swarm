@@ -73,6 +73,48 @@ def reconstruct_payload(data: Dict[str, Any]) -> Payload:
     )
 
 
+def convert_payload_to_dict(obj: Any) -> Any:
+    """
+    Recursively convert Payload objects to plain dicts for JSON serialization.
+
+    This is needed because Payload inherits from dict but stores data in dataclass fields.
+    When json.dump() sees a dict subclass, it serializes the (empty) dict storage instead
+    of calling the custom encoder, resulting in empty {} objects.
+
+    Args:
+        obj: Object to convert (can be Payload, list, dict, or primitive)
+
+    Returns:
+        Converted object with Payloads replaced by dicts
+    """
+    if isinstance(obj, Payload):
+        # Convert Payload to plain dict
+        return {
+            'world_state': convert_payload_to_dict(obj.world_state),
+            'actions': convert_payload_to_dict(obj.actions),
+            'metadata': convert_payload_to_dict(obj.metadata)
+        }
+    elif isinstance(obj, WorldState):
+        # Convert WorldState dataclass to dict
+        return {
+            'environment_states': convert_payload_to_dict(obj.environment_states),
+            'opponent_states': convert_payload_to_dict(obj.opponent_states),
+            'personal_states': convert_payload_to_dict(obj.personal_states)
+        }
+    elif isinstance(obj, dict):
+        # Recursively convert dict values
+        return {k: convert_payload_to_dict(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        # Recursively convert list/tuple items
+        return [convert_payload_to_dict(item) for item in obj]
+    elif is_dataclass(obj):
+        # Convert any other dataclass
+        return convert_payload_to_dict(asdict(obj))
+    else:
+        # Return primitives as-is
+        return obj
+
+
 class GDriveRolloutSharing:
     """
     Manages rollout file operations on Google Drive.
@@ -241,14 +283,15 @@ class GDriveRolloutSharing:
         # File path
         rollout_file = os.path.join(round_stage_path, f'{peer_id}.json')
 
-        # Prepare data
+        # Prepare data - convert Payload objects to dicts for proper JSON serialization
+        # This prevents empty {} objects caused by Payload inheriting from dict
         data = {
             'peer_id': peer_id,
             'round': round_num,
             'stage': stage,
             'timestamp': time.time(),
             'publish_frequency': self.publish_frequency,
-            'rollouts': rollouts_dict
+            'rollouts': convert_payload_to_dict(rollouts_dict)
         }
 
         # Write with retry
