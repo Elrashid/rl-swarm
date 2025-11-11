@@ -1,2 +1,0 @@
-{"timestamp": 1762427436.034409, "elapsed_seconds": 2.6226043701171875e-06, "event": "training_started", "node_id": "node_1", "experiment": "sapo_gpt2_config2_4loc4ext"}
-{"timestamp": 1762428031.356287, "elapsed_seconds": 595.3218808174133, "event": "training_complete", "total_rounds": 10, "node_id": "node_1", "total_elapsed_seconds": 595.3218762874603}
