@@ -1,0 +1,37 @@
+
+
+[---------] SYSTEM INFO [---------]
+
+Python Version:
+  3.12.12 (main, Oct 10 2025, 08:52:57) [GCC 11.4.0]
+
+Platform Information:
+  System: Linux
+  Release: 6.6.105+
+  Version: #1 SMP Thu Oct  2 10:42:05 UTC 2025
+  Machine: x86_64
+  Processor: x86_64
+
+CPU Information:
+  Physical cores: 6
+  Total cores: 12
+  Max Frequency: 0.00 Mhz
+  Current Frequency: 2200.23 Mhz
+
+Memory Information:
+  Total: 52.96 GB
+  Available: 47.31 GB
+  Used: 5.01 GB
+
+Disk Information (>80%):
+
+
+NVIDIA GPU Information:
+  GPU: NVIDIA L4
+    Memory Total: 23034 MB
+    Memory Used: 1459 MB
+    Memory Free: 21232 MB
+    Temperature: 49°C
+    Utilization: 0%
+
+[---------] SYSTEM INFO [---------]

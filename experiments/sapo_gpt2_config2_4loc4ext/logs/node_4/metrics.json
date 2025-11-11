@@ -1,0 +1,2 @@
+{"timestamp": 1762882730.7328079, "round": 0, "stage": 1, "node_id": "node_4", "experiment": "sapo_gpt2_config2_4loc4ext", "my_reward": 1.08, "total_agents": 1, "peer_id": "node_4"}
+{"timestamp": 1762882789.12918, "round": 1, "stage": 1, "node_id": "node_4", "experiment": "sapo_gpt2_config2_4loc4ext", "my_reward": 0.0, "total_agents": 1, "peer_id": "node_4"}
