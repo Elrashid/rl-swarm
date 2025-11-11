@@ -235,9 +235,8 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
         # Reset flag for next round
         self.submitted_this_round = False
 
-        # Notify GDrive backend that round has advanced (triggers cleanup & buffered publish)
-        if isinstance(self.communication, GDriveCommunicationBackend):
-            self.communication.advance_round()
+        # NOTE: communication.advance_round() is already called in run_game_round() line 150
+        # No need to call it again here (was causing double increment)
 
         # Block until swarm round advances
         self.agent_block()

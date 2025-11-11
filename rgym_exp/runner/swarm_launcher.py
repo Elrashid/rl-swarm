@@ -6,7 +6,9 @@ No Hydra, no Hivemind, no blockchain - just environment variables and direct ins
 """
 
 import os
+import sys
 import uuid
+import logging
 
 from transformers import AutoModelForCausalLM
 from rgym_exp.vendor.genrl.communication.communication import Communication
@@ -83,6 +85,17 @@ def main():
         experiment_name=experiment_name,
         node_id=node_id,
         flush_interval=log_flush_interval
+    )
+
+    # =======================
+    # 1a-2. Configure Python logging to write to stdout
+    # =======================
+    # This ensures get_logger() output is captured by TeeStream and saved to GDrive
+    logging.basicConfig(
+        level=logging.INFO,
+        format='[%(name)s] %(asctime)s %(levelname)s: %(message)s',
+        stream=sys.stdout,
+        force=True  # Override any existing configuration
     )
 
     # =======================
