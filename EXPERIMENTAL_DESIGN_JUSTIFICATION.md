@@ -226,16 +226,6 @@ The coordinator:
 
 During development, we discovered and fixed a critical bug where the coordinator never advanced rounds, causing all nodes to remain stuck at round 0 indefinitely. The fix (commit `eb02afe`) added auto-advancement logic to the coordinator's `agent_block()` method, ensuring rounds progress after worker activity or timeout.
 
-**Validation:**
-
-We added TEST_MODE (commit `eb02afe`) to validate coordinator functionality before full training runs:
-- 3 rounds in 1-2 minutes
-- Automated checks for round advancement
-- Worker submission verification
-- Log presence confirmation
-
-This ensures the coordinator architecture works correctly before investing 20+ hours in full experiments.
-
 **Comparison to Alternatives:**
 
 | Approach | Training Nodes | Memory | Pros | Cons |

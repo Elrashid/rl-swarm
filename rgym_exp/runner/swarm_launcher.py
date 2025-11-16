@@ -45,27 +45,13 @@ def main():
     # Optional env vars
     hf_token = os.environ.get('HUGGINGFACE_ACCESS_TOKEN')
 
-    # Check for TEST_MODE (quick validation run)
-    test_mode = os.environ.get('TEST_MODE', 'False').lower() == 'true'
-
     # Training config (configurable via env vars for SAPO experiments)
-    if test_mode:
-        # Test mode: 3 rounds, small batch size for quick validation (~1-2 minutes)
-        max_round = 3
-        max_stage = int(os.environ.get('MAX_STAGES', '1'))
-        num_generations = 4
-        num_transplant_trees = int(os.environ.get('NUM_TRANSPLANT_TREES', '2'))  # Test rollout sharing
-        num_train_samples = 4
-        dtype = 'float32'
-        get_logger().info("🧪 TEST MODE ENABLED: 3 rounds, 4 samples, 4 generations, 2 transplants")
-    else:
-        # Normal mode: use env vars or defaults
-        max_round = int(os.environ.get('MAX_ROUNDS', '2000'))
-        max_stage = int(os.environ.get('MAX_STAGES', '1'))
-        num_generations = int(os.environ.get('NUM_GENERATIONS', '8'))
-        num_transplant_trees = int(os.environ.get('NUM_TRANSPLANT_TREES', '0'))
-        num_train_samples = int(os.environ.get('NUM_TRAIN_SAMPLES', '8'))
-        dtype = 'float32'
+    max_round = int(os.environ.get('MAX_ROUNDS', '2000'))
+    max_stage = int(os.environ.get('MAX_STAGES', '1'))
+    num_generations = int(os.environ.get('NUM_GENERATIONS', '8'))
+    num_transplant_trees = int(os.environ.get('NUM_TRANSPLANT_TREES', '0'))
+    num_train_samples = int(os.environ.get('NUM_TRAIN_SAMPLES', '8'))
+    dtype = 'float32'
 
     # Rollout sharing config
     rollout_publish_frequency = os.environ.get('ROLLOUT_PUBLISH_FREQUENCY', 'stage')

@@ -6,7 +6,7 @@ Quick reference for running SAPO experiments on different GPU configurations.
 
 | Your GPU | What You Can Run | Notebook to Use | Notes |
 |----------|------------------|-----------------|-------|
-| **A100 80GB** | 5 nodes (1 coord + 4 workers) | `EX12.14a-d`, `TEST_MODE` | ✅ **Recommended** - Full swarm, all configs |
+| **A100 80GB** | 5 nodes (1 coord + 4 workers) | `EX12.14a-d` | ✅ **Recommended** - Full swarm, all configs |
 | **A100 40GB** | 4 nodes (1 coord + 3 workers) | `EX12.14` (modify) | ⚠️ Reduce to 4 total nodes |
 | **V100 32GB** | 3 nodes (1 coord + 2 workers) | Not supported yet | Need to create custom notebook |
 | **L4 24GB** | 2 nodes (1 coord + 1 worker) | Not supported yet | Need to create custom notebook |
@@ -72,7 +72,6 @@ Requires 8 separate GPUs with 16GB+ each
 **Timeline:** ~21 hours per experiment, 4 days for all 4 configs
 
 **Notebooks:**
-- `notebooks/TEST_MODE.ipynb` - Quick test first (1-2 min)
 - `notebooks/EX12.14a.SAPO_gpt2_Baseline_4loc0ext.ipynb` - Baseline
 - `notebooks/EX12.14b.SAPO_gpt2_Config1_3loc1ext.ipynb` - Config 1
 - `notebooks/EX12.14c.SAPO_gpt2_Config2_2loc2ext.ipynb` - Config 2 (BEST)
@@ -80,9 +79,8 @@ Requires 8 separate GPUs with 16GB+ each
 
 **Steps:**
 1. Open Colab, select Runtime > Change runtime type > A100 GPU
-2. **First run TEST_MODE to verify setup (~1-2 min)**
-3. Open one of the EX12.14a-d notebooks
-4. Run all cells - pre-configured, no changes needed!
+2. Open one of the EX12.14a-d notebooks
+3. Run all cells - pre-configured, no changes needed!
 
 ---
 
