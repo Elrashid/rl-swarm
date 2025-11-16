@@ -16,6 +16,7 @@ from huggingface_hub import login, whoami
 
 from rgym_exp.src.utils.name_utils import get_name_from_peer_id
 from rgym_exp.communication.gdrive_backend import GDriveCommunicationBackend
+from rgym_exp.src.adaptive_ij import GradientAdaptiveIJ
 
 
 class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
@@ -36,6 +37,7 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
         log_dir: str = "logs",
         hf_token: str | None = None,
         hf_push_frequency: int = 20,
+        adaptive_ij: GradientAdaptiveIJ = None,  # Optional adaptive I/J algorithm
         **kwargs,
     ):
 
@@ -112,6 +114,14 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
         self.time_since_submit = time.time()  # seconds
         self.submit_period = 3.0  # hours
         self.submitted_this_round = False
+
+        # Adaptive I/J algorithm (optional)
+        self.adaptive_ij = adaptive_ij
+        if self.adaptive_ij is not None:
+            get_logger().info(
+                f"🔄 Adaptive I/J enabled: total_samples={self.adaptive_ij.total_samples}, "
+                f"alpha={self.adaptive_ij.alpha}"
+            )
 
     def run_game_round(self):
         """
@@ -235,8 +245,53 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
         # Reset flag for next round
         self.submitted_this_round = False
 
+        # Update adaptive I/J if enabled
+        if self.adaptive_ij is not None:
+            self._update_adaptive_ij()
+
         # NOTE: communication.advance_round() is already called in run_game_round() line 150
         # No need to call it again here (was causing double increment)
+
+    def _update_adaptive_ij(self):
+        """Update I/J values using adaptive algorithm based on round reward."""
+        # Compute average reward for this round
+        signal_by_agent = self._get_total_rewards_by_agent()
+        if len(signal_by_agent) > 0:
+            round_reward = sum(signal_by_agent.values()) / len(signal_by_agent)
+        else:
+            round_reward = 0.0
+
+        # Update adaptive algorithm
+        I, J = self.adaptive_ij.update(round_reward)
+
+        # Apply new I/J values to data manager
+        # Note: num_transplant_trees = J (external rollouts)
+        # num_train_samples = I (local rollouts) is managed by trainer
+        old_J = self.data_manager.num_transplant_trees
+        self.data_manager.num_transplant_trees = J
+
+        get_logger().info(
+            f"🔄 Adaptive I/J updated: J {old_J} → {J}, I={I} "
+            f"(reward={round_reward:.4f})"
+        )
+
+        # Log adaptive I/J statistics to GDrive
+        if self.gdrive_logger:
+            try:
+                stats = self.adaptive_ij.get_statistics()
+                self.gdrive_logger.log_metrics(
+                    self.state.round,
+                    0,  # stage 0 (after round completion)
+                    {
+                        'adaptive_I': I,
+                        'adaptive_J': J,
+                        'adaptive_J_continuous': stats['J_continuous'],
+                        'adaptive_baseline': stats['baseline_reward'],
+                        'adaptive_round_reward': round_reward,
+                    }
+                )
+            except Exception as e:
+                get_logger().debug(f"Failed to log adaptive I/J metrics: {e}")
 
         # Block until swarm round advances
         self.agent_block()
