@@ -78,11 +78,13 @@ class GDriveCommunicationBackend(Communication):
     def step_(self, value: int):
         """
         Set current step (round number).
-        Triggers cache invalidation if round changed.
+        Triggers cache invalidation if round changed and resets stage/generation.
         """
         if value != self.current_round:
             old_round = self.current_round
             self.current_round = value
+            self.current_stage = 0  # Reset stage when round changes
+            self.current_generation = 0  # Reset generation when round changes
             if old_round > 0:  # Don't log on initialization
                 get_logger().debug(f"Round advanced: {old_round} -> {value}")
             self._invalidate_cache()
@@ -218,13 +220,8 @@ class GDriveCommunicationBackend(Communication):
                     self.node_id,
                     old_round
                 )
-            elif self.publish_frequency == 'stage':
-                # Flush the completed stage before advancing round
-                self.rollout_sharing.flush_buffer(
-                    self.node_id,
-                    old_round,
-                    old_stage
-                )
+            # Note: For 'stage' frequency, stages are flushed in advance_stage(),
+            # so no need to flush again here (would be duplicate)
 
         self.current_round += 1
         self.current_stage = 0
