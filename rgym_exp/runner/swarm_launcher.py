@@ -73,6 +73,14 @@ def main():
     rollout_keep_last_n_rounds = int(os.environ.get('ROLLOUT_KEEP_LAST_N_ROUNDS', '10'))
     rollout_archive_old = os.environ.get('ROLLOUT_ARCHIVE_OLD', 'False').lower() == 'true'
 
+    # Adaptive I/J config
+    adaptive_ij_enabled = os.environ.get('ADAPTIVE_IJ_ENABLED', 'False').lower() == 'true'
+    adaptive_ij_alpha = float(os.environ.get('ADAPTIVE_IJ_ALPHA', '0.1'))
+    adaptive_ij_baseline_alpha = float(os.environ.get('ADAPTIVE_IJ_BASELINE_ALPHA', '0.95'))
+    adaptive_ij_initial_J = os.environ.get('ADAPTIVE_IJ_INITIAL_J', None)
+    if adaptive_ij_initial_J is not None:
+        adaptive_ij_initial_J = float(adaptive_ij_initial_J)
+
     # Paths
     log_dir = f"{gdrive_path}/experiments/{experiment_name}/logs/{node_id}"
 
@@ -260,7 +268,26 @@ def main():
         get_logger().info("✓ Created GDrive coordinator (read-only, will poll state)")
 
     # =======================
-    # 10. Create Game Manager
+    # 10. Create Adaptive I/J Algorithm (Optional)
+    # =======================
+    adaptive_ij = None
+    if adaptive_ij_enabled:
+        from rgym_exp.src.adaptive_ij import GradientAdaptiveIJ
+        total_samples = num_train_samples + num_transplant_trees
+        adaptive_ij = GradientAdaptiveIJ(
+            total_samples=total_samples,
+            adaptation_rate=adaptive_ij_alpha,
+            baseline_alpha=adaptive_ij_baseline_alpha,
+            initial_J=adaptive_ij_initial_J
+        )
+        get_logger().info(
+            f"✓ Created adaptive I/J algorithm: "
+            f"total={total_samples}, alpha={adaptive_ij_alpha}, "
+            f"initial_J={adaptive_ij_initial_J or total_samples/2:.1f}"
+        )
+
+    # =======================
+    # 11. Create Game Manager
     # =======================
     game_manager = SwarmGameManager(
         coordinator=coordinator,
@@ -275,7 +302,8 @@ def main():
         run_mode="train_and_evaluate",
         log_dir=log_dir,
         hf_token=hf_token,
-        hf_push_frequency=20
+        hf_push_frequency=20,
+        adaptive_ij=adaptive_ij
     )
 
     get_logger().info("✓ Created game manager")
