@@ -281,12 +281,12 @@ class ReasoningGymDataManager(LocalMemoryTextDataManager):
                     get_logger().debug("Round 0: No previous rollouts to fetch")
 
             except FileNotFoundError as e:
-                get_logger().warning(f"Rollout files not found for round {max(0, current_state.round - 1)}: {e}")
+                get_logger().warning(f"Rollout files not found for round {fetch_round}: {e}")
                 swarm_states = {}
                 self.consecutive_fetch_failures += 1
             except json.JSONDecodeError as e:
                 # JSONDecodeError is common during concurrent writes - log as warning
-                get_logger().warning(f"Corrupted rollout file for round {max(0, current_state.round - 1)} (concurrent write?): {e}")
+                get_logger().warning(f"Corrupted rollout file for round {fetch_round} (concurrent write?): {e}")
                 swarm_states = {}
                 self.consecutive_fetch_failures += 1
 
@@ -298,7 +298,7 @@ class ReasoningGymDataManager(LocalMemoryTextDataManager):
                     )
             except Exception as e:
                 # Catch all other unexpected exceptions
-                get_logger().error(f"Failed to fetch swarm states from round {max(0, current_state.round - 1)}: {e}")
+                get_logger().error(f"Failed to fetch swarm states from round {fetch_round}: {e}")
                 swarm_states = {}
                 self.consecutive_fetch_failures += 1
 
@@ -321,7 +321,12 @@ class ReasoningGymDataManager(LocalMemoryTextDataManager):
                 )
                 world_state = received_states.environment_states
                 payload_batch_id = generate_md5_hash_id(world_state["question"])
-                assert payload_batch_id == batch_id
+                # Check batch ID match instead of hard assert to avoid crashes
+                if payload_batch_id != batch_id:
+                    get_logger().error(
+                        f"Batch ID mismatch for agent {agent}: expected {batch_id}, got {payload_batch_id}. Skipping this rollout."
+                    )
+                    continue
                 if (
                     trees[agent][batch_id] is None
                 ):  # we don't have a tree for this batch item, make one and append actions
@@ -373,9 +378,11 @@ class ReasoningGymDataManager(LocalMemoryTextDataManager):
                                 )
                             all_transplants[(agent, batch_id)] = payload
 
-        # Randomly sample num_transplants to avoid bias
+        # Randomly sample num_transplants to avoid bias (use seeded RNG for reproducibility)
         if len(all_transplants) <= num_transplants:
             return all_transplants
 
-        selected_keys = random.sample(list(all_transplants.keys()), num_transplants)
+        # Use seeded random generator for reproducible transplant selection
+        rng = random.Random(self.seed) if self.seed is not None else random
+        selected_keys = rng.sample(list(all_transplants.keys()), num_transplants)
         return {key: all_transplants[key] for key in selected_keys}

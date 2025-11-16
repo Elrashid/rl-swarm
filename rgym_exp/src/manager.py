@@ -163,7 +163,8 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
 
     def _get_total_rewards_by_agent(self):
         rewards_by_agent = defaultdict(int)
-        for stage in range(self.state.stage + 1):  # Include current stage
+        # Only include completed stages to avoid counting incomplete data
+        for stage in range(self.state.stage):
             rewards = self.rewards[stage]
             for agent_id, agent_rewards in rewards.items():
                 for batch_id, batch_rewards in agent_rewards.items():

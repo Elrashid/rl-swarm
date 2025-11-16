@@ -256,6 +256,21 @@ class GDriveRolloutSharing:
         del self._rollout_buffer[buffer_key]
         get_logger().debug(f"Flushed buffer for {buffer_key}")
 
+    def clear_old_buffers(self, old_round: int):
+        """
+        Clear any leftover buffer entries from previous rounds to prevent key collisions.
+
+        Args:
+            old_round: The round number that just completed
+        """
+        keys_to_remove = [
+            key for key in self._rollout_buffer.keys()
+            if (isinstance(key, tuple) and len(key) >= 2 and key[1] <= old_round)
+        ]
+        for key in keys_to_remove:
+            del self._rollout_buffer[key]
+            get_logger().warning(f"Cleared unflushed buffer entry: {key}")
+
     def _write_rollouts_to_drive(
         self,
         peer_id: str,
