@@ -38,6 +38,7 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
         hf_token: str | None = None,
         hf_push_frequency: int = 20,
         adaptive_ij: GradientAdaptiveIJ = None,  # Optional adaptive I/J algorithm
+        submit_period_hours: float = 0.0,  # Reward submission frequency (0=every round)
         **kwargs,
     ):
 
@@ -111,7 +112,7 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
 
         self.batched_signals = 0.0
         self.time_since_submit = time.time()  # seconds
-        self.submit_period = 3.0  # hours
+        self.submit_period = submit_period_hours  # hours (configurable, default 0.0 = every round)
         self.submitted_this_round = False
 
         # Adaptive I/J algorithm (optional)

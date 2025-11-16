@@ -81,6 +81,11 @@ def main():
     if adaptive_ij_initial_J is not None:
         adaptive_ij_initial_J = float(adaptive_ij_initial_J)
 
+    # Reward submission config (legacy blockchain setting, now configurable)
+    # Default: 0.0 = submit every round (no batching)
+    # Old default was 3.0 hours for blockchain gas cost reduction
+    submit_period_hours = float(os.environ.get('SUBMIT_PERIOD_HOURS', '0.0'))
+
     # Paths
     log_dir = f"{gdrive_path}/experiments/{experiment_name}/logs/{node_id}"
 
@@ -303,7 +308,8 @@ def main():
         log_dir=log_dir,
         hf_token=hf_token,
         hf_push_frequency=20,
-        adaptive_ij=adaptive_ij
+        adaptive_ij=adaptive_ij,
+        submit_period_hours=submit_period_hours
     )
 
     get_logger().info("✓ Created game manager")
