@@ -55,9 +55,6 @@ def main():
 
     # Rollout sharing config
     rollout_publish_frequency = os.environ.get('ROLLOUT_PUBLISH_FREQUENCY', 'stage')
-    rollout_cleanup_enabled = os.environ.get('ROLLOUT_CLEANUP_ENABLED', 'False').lower() == 'true'
-    rollout_keep_last_n_rounds = int(os.environ.get('ROLLOUT_KEEP_LAST_N_ROUNDS', '10'))
-    rollout_archive_old = os.environ.get('ROLLOUT_ARCHIVE_OLD', 'False').lower() == 'true'
 
     # Adaptive I/J config
     adaptive_ij_enabled = os.environ.get('ADAPTIVE_IJ_ENABLED', 'False').lower() == 'true'
@@ -122,21 +119,13 @@ def main():
     # =======================
     # 2. Create Rollout Sharing
     # =======================
-    retention_config = {
-        'cleanup_enabled': rollout_cleanup_enabled,
-        'keep_last_n_rounds': rollout_keep_last_n_rounds,
-        'archive_old_rollouts': rollout_archive_old,
-        'archive_path': f"{gdrive_path}/archives/{experiment_name}/"
-    }
-
     rollout_sharing = GDriveRolloutSharing(
         gdrive_path=gdrive_path,
         experiment_name=experiment_name,
-        publish_frequency=rollout_publish_frequency,
-        retention_config=retention_config
+        publish_frequency=rollout_publish_frequency
     )
 
-    get_logger().info(f"✓ Created rollout sharing (cleanup={rollout_cleanup_enabled})")
+    get_logger().info(f"✓ Created rollout sharing")
 
     # =======================
     # 3. Create Communication Backend

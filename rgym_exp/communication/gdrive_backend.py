@@ -231,9 +231,6 @@ class GDriveCommunicationBackend(Communication):
         # Clear any leftover buffer entries from previous round to prevent key collisions
         self.rollout_sharing.clear_old_buffers(old_round)
 
-        # Trigger cleanup based on retention policy
-        self.rollout_sharing.cleanup_old_rollouts(self.current_round)
-
         # Invalidate cache
         self._invalidate_cache()
 

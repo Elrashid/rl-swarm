@@ -67,7 +67,6 @@ The following have been **completely removed** from this fork:
 - **Coordination**: Google Drive state files (JSON)
 - **Training**: GRPO (Group Relative Policy Optimization) for policy updates
 - **Rollout Sharing**: Configurable frequency (generation/stage/round)
-- **Retention**: Configurable cleanup and archiving policies
 - **Configuration**: 100% environment variables (no config files)
 
 ### Configuration
@@ -85,9 +84,6 @@ The following have been **completely removed** from this fork:
 - `NUM_TRANSPLANT_TREES`: External rollouts to use (default: 0)
 - `COORDINATOR_ROUND_INTERVAL`: Seconds between coordinator round advances (default: 60)
 - `ROLLOUT_PUBLISH_FREQUENCY`: 'generation', 'stage', or 'round'
-- `ROLLOUT_CLEANUP_ENABLED`: Enable/disable old rollout cleanup
-- `ROLLOUT_KEEP_LAST_N_ROUNDS`: How many rounds to keep
-- `ROLLOUT_ARCHIVE_OLD`: Archive instead of delete
 
 **No Hydra, no YAML files** - all parameters are read directly from environment variables in `swarm_launcher.py`
 
@@ -128,7 +124,6 @@ export NODE_ROLE="coordinator"
 export NODE_ID="coordinator_0"
 export MODEL_NAME="Gensyn/Qwen2.5-0.5B-Instruct"
 export ROLLOUT_PUBLISH_FREQUENCY="stage"
-export ROLLOUT_CLEANUP_ENABLED="False"
 
 python -m rgym_exp.runner.swarm_launcher
 
@@ -139,7 +134,6 @@ export NODE_ROLE="worker"
 export NODE_ID="worker_1"                     # DIFFERENT
 export MODEL_NAME="Gensyn/Qwen2.5-0.5B-Instruct"
 export ROLLOUT_PUBLISH_FREQUENCY="stage"
-export ROLLOUT_CLEANUP_ENABLED="False"
 
 python -m rgym_exp.runner.swarm_launcher
 ```
@@ -195,9 +189,6 @@ python -m rgym_exp.runner.swarm_launcher
 - `MODEL_NAME`: HuggingFace model (default: Gensyn/Qwen2.5-0.5B-Instruct)
 - `SEED`: Random seed (default: 42)
 - `ROLLOUT_PUBLISH_FREQUENCY`: 'generation', 'stage', or 'round' (default: stage)
-- `ROLLOUT_CLEANUP_ENABLED`: 'True' or 'False' (default: False)
-- `ROLLOUT_KEEP_LAST_N_ROUNDS`: Number of rounds to keep (default: 10)
-- `ROLLOUT_ARCHIVE_OLD`: 'True' or 'False' (default: False)
 - `HUGGINGFACE_ACCESS_TOKEN`: For pushing trained models (optional)
 
 **SAPO Experiment Configuration (NEW):**
@@ -235,7 +226,7 @@ This codebase extends GenRL base classes:
   - `publish_state()`: Publishes rollouts to Google Drive
   - `get_swarm_states()`: Fetches rollouts from peers
   - `advance_stage()`: Hook for stage advancement
-  - `advance_round()`: Hook for round advancement + cleanup
+  - `advance_round()`: Hook for round advancement
 
 **Common (Both Modes):**
 - `BaseGameManager` → `SwarmGameManager`: Orchestrates training
@@ -273,7 +264,6 @@ Training progress and logs are continuously saved to Google Drive:
 The `GDriveRolloutSharing` class handles all file operations:
 - **Publish**: Writes rollouts to `/rollouts/round_X/stage_Y/{peer_id}.json`
 - **Fetch**: Reads rollouts from other peers in same round/stage
-- **Cleanup**: Deletes/archives old rollouts based on retention policy
 - **Buffering**: Aggregates rollouts before writing (for stage/round frequencies)
 
 ### Communication Backend
@@ -357,8 +347,7 @@ See `GDRIVE_IMPLEMENTATION.md` for complete testing guide.
 Quick tests:
 1. Single node: Run coordinator only, verify rollout files created
 2. Multi-node: Run coordinator + worker, verify rollout sharing
-3. Retention: Enable cleanup, verify old rollouts deleted/archived
-4. Resume: Stop and restart, verify checkpoint loading works
+3. Resume: Stop and restart, verify checkpoint loading works
 
 **Legacy Tests (Removed):**
 - ~~`web/api/dht_pub_test.py`~~ (removed with web/)
@@ -369,7 +358,6 @@ Quick tests:
 **Google Drive Mode:**
 - **No rollout files created**: Check `GDRIVE_PATH` and experiment name match
 - **Rate limit errors**: Reduce publish frequency to 'round', enable caching
-- **Out of storage**: Enable cleanup with `cleanup_enabled: true`
 - **Worker can't find coordinator**: Verify `EXPERIMENT_NAME` matches exactly
 - **Slow training**: Enable caching, reduce `fetch_max_peers`
 
