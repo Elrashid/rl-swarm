@@ -183,17 +183,44 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
         else:
             my_signal = 0
 
-        # Log metrics to GDrive
+        # Log comprehensive reward metrics to GDrive
         if self.gdrive_logger:
             try:
+                # Calculate reward statistics across all agents
+                all_rewards = list(signal_by_agent.values())
+                import numpy as np
+
+                reward_metrics = {
+                    # Primary metrics
+                    'my_reward': float(my_signal),
+                    'total_agents': len(signal_by_agent),
+                    'peer_id': self.peer_id,
+
+                    # Reward distribution statistics
+                    'mean_reward': float(np.mean(all_rewards)) if all_rewards else 0.0,
+                    'std_reward': float(np.std(all_rewards)) if all_rewards else 0.0,
+                    'min_reward': float(np.min(all_rewards)) if all_rewards else 0.0,
+                    'max_reward': float(np.max(all_rewards)) if all_rewards else 0.0,
+                    'median_reward': float(np.median(all_rewards)) if all_rewards else 0.0,
+
+                    # Ranking information
+                    'my_rank': sorted(all_rewards, reverse=True).index(my_signal) + 1 if my_signal in all_rewards else 0,
+                    'percentile': (sum(1 for r in all_rewards if r < my_signal) / len(all_rewards) * 100) if all_rewards else 0.0,
+                }
+
+                # Log with stage=0 to indicate this is a round-level summary (after all stages)
                 self.gdrive_logger.log_metrics(
                     self.state.round,
-                    self.state.stage,
-                    {
-                        'my_reward': my_signal,
-                        'total_agents': len(signal_by_agent),
-                        'peer_id': self.peer_id
-                    }
+                    0,  # Use stage=0 for round-level summaries
+                    reward_metrics
+                )
+
+                # Also log a summary message
+                get_logger().info(
+                    f"Round {self.state.round} rewards - "
+                    f"My: {my_signal:.4f} (rank {reward_metrics['my_rank']}/{len(all_rewards)}), "
+                    f"Mean: {reward_metrics['mean_reward']:.4f}, "
+                    f"Range: [{reward_metrics['min_reward']:.4f}, {reward_metrics['max_reward']:.4f}]"
                 )
             except Exception as e:
                 get_logger().debug(f"Failed to log metrics: {e}")
@@ -231,6 +258,36 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
         my_reward = self._get_my_rewards(signal_by_agent)  # Calculate once, reuse
         self.batched_signals += my_reward
         self._try_submit_to_chain(signal_by_agent)
+
+        # Log per-stage reward breakdown for detailed analysis
+        if self.gdrive_logger:
+            try:
+                for stage in range(self.state.stage):
+                    stage_rewards = self.rewards[stage]
+                    if self.peer_id in stage_rewards:
+                        agent_rewards = stage_rewards[self.peer_id]
+                        # Calculate total reward for this stage
+                        stage_total = 0
+                        num_samples = 0
+                        for batch_id, batch_rewards in agent_rewards.items():
+                            for generation_rewards in batch_rewards:
+                                stage_total += sum(generation_rewards)
+                                num_samples += len(generation_rewards)
+
+                        # Log stage-specific metrics
+                        self.gdrive_logger.log_metrics(
+                            self.state.round,
+                            stage,
+                            {
+                                'stage_reward': float(stage_total),
+                                'num_samples': num_samples,
+                                'avg_reward_per_sample': float(stage_total / num_samples) if num_samples > 0 else 0.0,
+                                'peer_id': self.peer_id,
+                                'is_stage_detail': True  # Flag to distinguish from round summaries
+                            }
+                        )
+            except Exception as e:
+                get_logger().debug(f"Failed to log per-stage rewards: {e}")
 
         # Accumulate rewards for adaptive I/J algorithm
         if self.adaptive_ij is not None:
