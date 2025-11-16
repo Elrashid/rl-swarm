@@ -117,6 +117,7 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
 
         # Adaptive I/J algorithm (optional)
         self.adaptive_ij = adaptive_ij
+        self.round_rewards_accumulator = []  # Track rewards during round for adaptive I/J
         if self.adaptive_ij is not None:
             get_logger().info(
                 f"🔄 Adaptive I/J enabled: total_samples={self.adaptive_ij.total_samples}, "
@@ -230,6 +231,11 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
         self.batched_signals += self._get_my_rewards(signal_by_agent)
         self._try_submit_to_chain(signal_by_agent)
 
+        # Accumulate rewards for adaptive I/J algorithm
+        if self.adaptive_ij is not None:
+            my_reward = self._get_my_rewards(signal_by_agent)
+            self.round_rewards_accumulator.append(my_reward)
+
         # NOTE: Rollout publishing now happens in run_game_round() via all_gather_object()
         # This ensures rollouts are published with the correct stage information during
         # the stage loop, not after all stages are complete.
@@ -254,15 +260,18 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
 
     def _update_adaptive_ij(self):
         """Update I/J values using adaptive algorithm based on round reward."""
-        # Compute average reward for this round
-        signal_by_agent = self._get_total_rewards_by_agent()
-        if len(signal_by_agent) > 0:
-            round_reward = sum(signal_by_agent.values()) / len(signal_by_agent)
+        # Compute total reward for this round from accumulated stage rewards
+        if len(self.round_rewards_accumulator) > 0:
+            round_reward = sum(self.round_rewards_accumulator)
         else:
             round_reward = 0.0
+            get_logger().warning("No rewards accumulated for adaptive I/J update")
 
         # Update adaptive algorithm
         I, J = self.adaptive_ij.update(round_reward)
+
+        # Reset accumulator for next round
+        self.round_rewards_accumulator = []
 
         # Apply new I/J values to data manager
         # Note: num_transplant_trees = J (external rollouts)

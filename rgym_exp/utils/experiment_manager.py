@@ -129,13 +129,14 @@ def list_experiments(gdrive_base_path: str) -> List[Dict[str, Any]]:
     return experiments
 
 
-def get_experiment_metrics(gdrive_base_path: str, experiment_name: str) -> pd.DataFrame:
+def get_experiment_metrics(gdrive_base_path: str, experiment_name: str, aggregate_by_round: bool = False) -> pd.DataFrame:
     """
     Aggregate metrics from all nodes in an experiment.
 
     Args:
         gdrive_base_path: Base path in Google Drive
         experiment_name: Name of experiment
+        aggregate_by_round: If True, sum rewards per round instead of per stage
 
     Returns:
         DataFrame with metrics from all nodes
@@ -169,7 +170,19 @@ def get_experiment_metrics(gdrive_base_path: str, experiment_name: str) -> pd.Da
     except Exception as e:
         get_logger().error(f"Error getting metrics: {e}")
 
-    return pd.DataFrame(all_metrics)
+    df = pd.DataFrame(all_metrics)
+
+    # Optionally aggregate by round (sum rewards across stages)
+    if aggregate_by_round and not df.empty and 'round' in df.columns and 'my_reward' in df.columns:
+        # Group by node_id and round, sum rewards
+        df = df.groupby(['node_id', 'round']).agg({
+            'my_reward': 'sum',
+            'timestamp': 'first',
+            # Preserve adaptive_* columns if they exist
+            **{col: 'last' for col in df.columns if col.startswith('adaptive_')}
+        }).reset_index()
+
+    return df
 
 
 def export_experiment_summary(
