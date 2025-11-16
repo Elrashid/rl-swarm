@@ -270,7 +270,6 @@ The `GDriveRolloutSharing` class handles all file operations:
 
 The `GDriveCommunicationBackend` implements GenRL's `Communication` interface:
 - Compatible with existing GenRL code (drop-in replacement)
-- Local caching to reduce Google Drive API calls
 - Retry logic with exponential backoff for API rate limits
 - Hooks for stage/round advancement
 
@@ -295,7 +294,6 @@ Rollout files are JSON:
 - **API Calls**: ~16 per stage (4 nodes, frequency='stage')
 - **Latency**: +1-2 seconds per stage vs Hivemind
 - **Storage**: ~8 MB per 100 rounds (4 nodes, 2 stages/round)
-- **Caching**: Reduces redundant API reads by ~60%
 
 ### Notebook Utilities
 
@@ -357,9 +355,9 @@ Quick tests:
 
 **Google Drive Mode:**
 - **No rollout files created**: Check `GDRIVE_PATH` and experiment name match
-- **Rate limit errors**: Reduce publish frequency to 'round', enable caching
+- **Rate limit errors**: Reduce publish frequency to 'round'
 - **Worker can't find coordinator**: Verify `EXPERIMENT_NAME` matches exactly
-- **Slow training**: Enable caching, reduce `fetch_max_peers`
+- **Slow training**: Reduce `fetch_max_peers`
 
 **General:**
 - **OOM on MacBook**: Set `export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0`

@@ -121,7 +121,6 @@ class GDriveRolloutSharing:
 
     Supports:
     - Configurable publish frequency (generation/stage/round)
-    - Local caching to reduce API calls
     - Retry logic for API rate limits
     """
 

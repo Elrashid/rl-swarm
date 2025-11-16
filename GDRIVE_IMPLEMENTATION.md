@@ -26,7 +26,6 @@ RL Swarm now supports a **Google Drive-only mode** that eliminates all external 
 ### ✅ What's Included
 - Google Drive-based rollout sharing (no P2P networking)
 - Configurable publish frequency (generation/stage/round)
-- Local caching to reduce API calls
 - Retry logic for API rate limits
 - Full backward compatibility (Hivemind mode still works)
 
@@ -65,7 +64,7 @@ RL Swarm now supports a **Google Drive-only mode** that eliminates all external 
    - Core rollout publishing and fetching
    - Configurable publish frequency
    - Retry logic with exponential backoff
-   - Local caching and atomic writes
+   - Atomic writes
 
 2. **`rgym_exp/communication/gdrive_backend.py`** (200 lines)
    - GenRL-compatible communication backend
@@ -92,7 +91,7 @@ RL Swarm now supports a **Google Drive-only mode** that eliminates all external 
 3. **`rgym_exp/config/colab-gdrive.yaml`** (25 changes)
    - Replaced Hivemind communication with GDriveCommunicationBackend
    - Added rollout_publish_frequency configuration
-   - Added fetch_max_peers, fetch_timeout_seconds, cache_rollouts
+   - Added fetch_max_peers, fetch_timeout_seconds
    - Removed old communications section (discovery)
 
 4. **`notebooks/EX12.00.RL_Swarm_Coordinator.ipynb`** (removed 1 cell, updated 3 cells)
@@ -133,13 +132,13 @@ class GDriveCommunicationBackend(Communication):
         """Publishes rollouts to Google Drive based on frequency"""
 
     def get_swarm_states(self, round_num=None, stage=None) -> Dict:
-        """Fetches rollouts from other peers with caching"""
+        """Fetches rollouts from other peers"""
 
     def advance_stage(self):
         """Hook called when stage advances"""
 
     def advance_round(self):
-        """Hook called when round advances - triggers cleanup"""
+        """Hook called when round advances"""
 ```
 
 ### Rollout Sharing
@@ -180,18 +179,11 @@ Write to: /rollouts/round_X/stage_Y/{peer_id}.json
 ```
 Training Loop
     ↓
-get_swarm_states() [with caching]
+get_swarm_states()
     ↓
-Check local cache
+GDriveRolloutSharing.fetch_rollouts()
     ↓
-    ├─ Cache hit → Return cached data
-    └─ Cache miss ↓
-        ↓
-    GDriveRolloutSharing.fetch_rollouts()
-        ↓
-    Read from: /rollouts/round_X/stage_Y/*.json
-        ↓
-    Cache results
+Read from: /rollouts/round_X/stage_Y/*.json
 ```
 
 ---
@@ -412,7 +404,6 @@ Expected overhead compared to Hivemind:
 
 #### Slow training
 - Check Google Drive sync isn't bottleneck
-- Enable caching: `cache_rollouts: true`
 - Use `frequency='round'` for fewer API calls
 - Check network connection quality
 
@@ -496,13 +487,11 @@ The system auto-detects which mode to use based on config.
 - Protocol: File-based JSON in Google Drive
 - Format: Same as Hivemind (dict of batch_id → payloads)
 - Frequency: Configurable (generation/stage/round)
-- Caching: Local in-memory cache with invalidation
 - Retry: Exponential backoff (2^n seconds, max 3 retries)
 
 **Performance:**
 - Buffering: Reduces API calls for stage/round frequencies
 - Atomic writes: Temp file + rename prevents corruption
-- Caching: Reduces redundant API reads
 - Lazy loading: Fetches only when needed
 
 **Compatibility:**

@@ -138,8 +138,7 @@ def main():
         experiment_name=experiment_name,
         rollout_publish_frequency=rollout_publish_frequency,
         fetch_max_peers=10,
-        fetch_timeout_seconds=30,
-        cache_rollouts=True
+        fetch_timeout_seconds=30
     )
 
     get_logger().info("✓ Created GDrive communication backend")
