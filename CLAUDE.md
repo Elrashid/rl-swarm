@@ -43,7 +43,6 @@ This fork is **Google Drive-only**. All blockchain, Hivemind, and Hydra dependen
    - `notebooks/EX12.14b.SAPO_gpt2_Config1_3loc1ext.ipynb`: **5-NODE** - Pre-configured Config 1 (3 local / 1 external)
    - `notebooks/EX12.14c.SAPO_gpt2_Config2_2loc2ext.ipynb`: **5-NODE** - Pre-configured Config 2 (2 local / 2 external) **BEST**
    - `notebooks/EX12.14d.SAPO_gpt2_Config3_1loc3ext.ipynb`: **5-NODE** - Pre-configured Config 3 (1 local / 3 external)
-   - `notebooks/TEST_MODE.ipynb`: **NEW** - Quick validation test (3 rounds, 1-2 min, verifies coordinator/rollouts/logs)
    - `notebooks/EX12.20.SAPO_Results_Analysis.ipynb`: Compare all SAPO experiment results
 
 **Configuration**: All configuration via **environment variables only** (no YAML files)
@@ -80,10 +79,9 @@ The following have been **completely removed** from this fork:
 - `NODE_ID`: Unique node identifier
 - `MODEL_NAME`: HuggingFace model ID
 - `SEED`: Random seed
-- `TEST_MODE`: Enable quick validation mode ('True'/'False', default: 'False')
-- `MAX_ROUNDS`: Number of training rounds (default: 2000, TEST_MODE: 3)
-- `NUM_TRAIN_SAMPLES`: Batch size per node (default: 8, TEST_MODE: 4)
-- `NUM_GENERATIONS`: Generations per sample (default: 8, TEST_MODE: 4)
+- `MAX_ROUNDS`: Number of training rounds (default: 2000)
+- `NUM_TRAIN_SAMPLES`: Batch size per node (default: 8)
+- `NUM_GENERATIONS`: Generations per sample (default: 8)
 - `NUM_TRANSPLANT_TREES`: External rollouts to use (default: 0)
 - `COORDINATOR_ROUND_INTERVAL`: Seconds between coordinator round advances (default: 60)
 - `ROLLOUT_PUBLISH_FREQUENCY`: 'generation', 'stage', or 'round'
@@ -146,40 +144,6 @@ export ROLLOUT_CLEANUP_ENABLED="False"
 python -m rgym_exp.runner.swarm_launcher
 ```
 
-**Quick Validation with TEST_MODE:**
-
-Before running full experiments, use TEST_MODE for quick validation (1-2 minutes):
-
-```bash
-# Using notebooks (Recommended)
-# Open notebooks/TEST_MODE.ipynb in Colab and run all cells
-
-# Or via command line
-export TEST_MODE="True"
-export GDRIVE_PATH="/path/to/shared/folder"
-export EXPERIMENT_NAME="test_validation"
-export NODE_ROLE="coordinator"
-export NODE_ID="coordinator_0"
-export MODEL_NAME="openai-community/gpt2"
-
-python -m rgym_exp.runner.swarm_launcher
-```
-
-TEST_MODE automatically sets:
-- `MAX_ROUNDS=3` (instead of 2000)
-- `NUM_TRAIN_SAMPLES=4` (instead of 8)
-- `NUM_GENERATIONS=4` (instead of 8)
-
-After completion, validate with:
-```bash
-python rgym_exp/test/validate_test_run.py \
-    --gdrive-path /path/to/gdrive \
-    --experiment test_validation \
-    --rounds 3 --nodes 5
-```
-
-See [`TESTING.md`](TESTING.md) for full testing guide.
-
 **Original Docker/Shell Methods (Removed):**
 - ~~Docker compose commands~~ (removed, no longer available)
 - ~~`run_rl_swarm.sh` script~~ (removed, no longer available)
@@ -199,7 +163,6 @@ See [`TESTING.md`](TESTING.md) for full testing guide.
   - `logs/{NODE_ID}/stdout.log`: Real-time console output (flushed every 30s)
   - `logs/{NODE_ID}/stderr.log`: Real-time error output (flushed every 30s)
   - `progress_{NODE_ID}.jsonl`: Per-node training progress (updated each round)
-  - `test_results.json`: TEST_MODE validation results (if applicable)
 - `/MyDrive/rl-swarm/archives/`: Archived rollouts (if archiving enabled)
 
 **Local Files:**
@@ -302,7 +265,6 @@ Training progress and logs are continuously saved to Google Drive:
 ### Utilities
 - `rgym_exp/utils/gdrive_log_stream.py`: Log streaming implementation
 - `rgym_exp/utils/progress_tracker.py`: Progress tracking API
-- `rgym_exp/utils/test_results.py`: Test results saving
 
 ## Google Drive Mode Details
 
