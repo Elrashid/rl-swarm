@@ -86,7 +86,6 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
         if log_dir and '/drive/' in log_dir:
             try:
                 from rgym_exp.src.gdrive_logger import GDriveLogger
-                import os
                 self.gdrive_logger = GDriveLogger(
                     gdrive_log_path=log_dir,
                     node_id=os.environ.get('NODE_ID', self.peer_id[:8]),
