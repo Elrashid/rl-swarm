@@ -88,14 +88,14 @@ class GDriveSwarmCoordinator:
 
         return round_num, stage_num
 
-    def submit_reward(self, round_num: int, stage_num: int, reward: int, peer_id: str):
+    def submit_reward(self, round_num: int, stage_num: int, reward: float, peer_id: str):
         """
         Submit reward to Google Drive.
 
         Args:
             round_num: Round number
             stage_num: Stage number
-            reward: Reward value
+            reward: Reward value (float)
             peer_id: Peer identifier
         """
         reward_dir = os.path.join(self.gdrive_path, 'rewards', f'round_{round_num}', f'stage_{stage_num}')

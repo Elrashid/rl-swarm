@@ -235,7 +235,7 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
         if elapsed_time_hours > self.submit_period:
             try:
                 self.coordinator.submit_reward(
-                    self.state.round, 0, int(self.batched_signals), self.peer_id
+                    self.state.round, 0, self.batched_signals, self.peer_id
                 )
                 self.batched_signals = 0.0
                 if len(signal_by_agent) > 0:
