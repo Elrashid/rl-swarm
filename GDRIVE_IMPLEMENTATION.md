@@ -26,9 +26,6 @@ RL Swarm now supports a **Google Drive-only mode** that eliminates all external 
 ### ✅ What's Included
 - Google Drive-based rollout sharing (no P2P networking)
 - Configurable publish frequency (generation/stage/round)
-- Configurable retention policies (keep all, keep N rounds, archive)
-- Automatic cleanup of old rollouts
-- Local caching to reduce API calls
 - Retry logic for API rate limits
 - Full backward compatibility (Hivemind mode still works)
 
@@ -46,7 +43,6 @@ RL Swarm now supports a **Google Drive-only mode** that eliminates all external 
 - **More Private**: All data stays in user's Google Drive
 - **Debuggable**: All rollouts visible as plain JSON files
 - **Colab-friendly**: No firewall/NAT issues
-- **Flexible**: Fully configurable retention policies
 
 ---
 
@@ -66,9 +62,9 @@ RL Swarm now supports a **Google Drive-only mode** that eliminates all external 
 
 1. **`rgym_exp/src/gdrive_rollout_sharing.py`** (320 lines)
    - Core rollout publishing and fetching
-   - Configurable publish frequency and retention
+   - Configurable publish frequency
    - Retry logic with exponential backoff
-   - Local caching and atomic writes
+   - Atomic writes
 
 2. **`rgym_exp/communication/gdrive_backend.py`** (200 lines)
    - GenRL-compatible communication backend
@@ -85,19 +81,17 @@ RL Swarm now supports a **Google Drive-only mode** that eliminates all external 
    - Added import for GDriveCommunicationBackend
    - Updated backend assertion to accept both backends
    - Made DHT call conditional (only for Hivemind)
-   - Added `advance_round()` hook for cleanup
+   - Added `advance_round()` hook
 
 2. **`rgym_exp/runner/swarm_launcher.py`** (major rewrite, ~50 lines)
    - Backend selection based on gdrive mode
-   - Reads retention config from yaml
    - Creates GDriveRolloutSharing instance
    - Injects rollout sharing into config
 
 3. **`rgym_exp/config/colab-gdrive.yaml`** (25 changes)
    - Replaced Hivemind communication with GDriveCommunicationBackend
    - Added rollout_publish_frequency configuration
-   - Added fetch_max_peers, fetch_timeout_seconds, cache_rollouts
-   - Added complete rollout_retention section
+   - Added fetch_max_peers, fetch_timeout_seconds
    - Removed old communications section (discovery)
 
 4. **`notebooks/EX12.00.RL_Swarm_Coordinator.ipynb`** (removed 1 cell, updated 3 cells)
@@ -138,13 +132,13 @@ class GDriveCommunicationBackend(Communication):
         """Publishes rollouts to Google Drive based on frequency"""
 
     def get_swarm_states(self, round_num=None, stage=None) -> Dict:
-        """Fetches rollouts from other peers with caching"""
+        """Fetches rollouts from other peers"""
 
     def advance_stage(self):
         """Hook called when stage advances"""
 
     def advance_round(self):
-        """Hook called when round advances - triggers cleanup"""
+        """Hook called when round advances"""
 ```
 
 ### Rollout Sharing
@@ -185,18 +179,11 @@ Write to: /rollouts/round_X/stage_Y/{peer_id}.json
 ```
 Training Loop
     ↓
-get_swarm_states() [with caching]
+get_swarm_states()
     ↓
-Check local cache
+GDriveRolloutSharing.fetch_rollouts()
     ↓
-    ├─ Cache hit → Return cached data
-    └─ Cache miss ↓
-        ↓
-    GDriveRolloutSharing.fetch_rollouts()
-        ↓
-    Read from: /rollouts/round_X/stage_Y/*.json
-        ↓
-    Cache results
+Read from: /rollouts/round_X/stage_Y/*.json
 ```
 
 ---
@@ -216,45 +203,6 @@ rollout_publish_frequency: 'stage'  # Options: generation, stage, round
 | `generation` | After each generation | Highest | Real-time sharing, debugging |
 | `stage` | After each stage | Medium | **Recommended** - balanced |
 | `round` | After each round | Lowest | Resource-constrained, slow connections |
-
-### Retention Policy
-
-Controls how long to keep old rollouts:
-
-```yaml
-rollout_retention:
-  cleanup_enabled: false           # Set to true to enable cleanup
-  keep_last_n_rounds: 10          # Keep last N rounds
-  archive_old_rollouts: false     # Archive instead of delete
-  archive_path: /path/to/archive
-```
-
-### Example Configurations
-
-#### Development (keep everything)
-```yaml
-rollout_publish_frequency: 'stage'
-rollout_retention:
-  cleanup_enabled: false
-```
-
-#### Production (cleanup with archive)
-```yaml
-rollout_publish_frequency: 'stage'
-rollout_retention:
-  cleanup_enabled: true
-  keep_last_n_rounds: 10
-  archive_old_rollouts: true
-```
-
-#### Resource-constrained (aggressive cleanup)
-```yaml
-rollout_publish_frequency: 'round'
-rollout_retention:
-  cleanup_enabled: true
-  keep_last_n_rounds: 3
-  archive_old_rollouts: false
-```
 
 ### Full Configuration Reference
 
@@ -279,9 +227,6 @@ SEED = 42
 
 # Rollout Configuration
 ROLLOUT_PUBLISH_FREQUENCY = 'stage'
-ROLLOUT_CLEANUP_ENABLED = False
-ROLLOUT_KEEP_LAST_N_ROUNDS = 10
-ROLLOUT_ARCHIVE_OLD = False
 
 # Run all cells
 ```
@@ -299,7 +244,6 @@ SEED = 42                             # SAME
 
 # Rollout Configuration (should match coordinator)
 ROLLOUT_PUBLISH_FREQUENCY = 'stage'
-ROLLOUT_CLEANUP_ENABLED = False
 
 # Run all cells
 ```
@@ -313,7 +257,6 @@ export EXPERIMENT_NAME="test_experiment"
 export NODE_ID="node_0"
 export MODEL_NAME="Gensyn/Qwen2.5-0.5B-Instruct"
 export ROLLOUT_PUBLISH_FREQUENCY="stage"
-export ROLLOUT_CLEANUP_ENABLED="False"
 
 # Run training
 python -m rgym_exp.runner.swarm_launcher --config-name colab-gdrive
@@ -346,10 +289,6 @@ To run multiple workers, simply:
 │       └── logs/{node_id}/
 │           ├── metrics.jsonl                  # Training metrics
 │           └── training_events.jsonl          # Events
-│
-└── archives/                                  # 🆕 Archive directory (optional)
-    └── qwen_0.6b_seed42/
-        └── rollouts/round_X/                  # Old rollouts
 ```
 
 ### Rollout File Format
@@ -408,17 +347,7 @@ With 4 nodes, 2 stages/round, `frequency='stage'`:
 # - Training uses swarm rollouts
 ```
 
-#### 3. Retention Policy Test
-```bash
-# Enable cleanup: cleanup_enabled=true, keep_last_n_rounds=5
-# Run for 10 rounds
-# Verify:
-# - Only rounds 5-9 exist in /rollouts/
-# - Older rounds deleted or archived
-# - Training continues normally
-```
-
-#### 4. Resume After Disconnect
+#### 3. Resume After Disconnect
 ```bash
 # Start training, run 5 rounds
 # Stop (simulate disconnect)
@@ -470,14 +399,11 @@ Expected overhead compared to Hivemind:
 - Increase timeout: `fetch_timeout_seconds: 60`
 
 #### Out of storage
-- Enable cleanup: `cleanup_enabled: true`
-- Reduce retention: `keep_last_n_rounds: 5`
-- Enable archiving to external location
 - Manually delete old experiments
+- Delete old rollout directories if no longer needed
 
 #### Slow training
 - Check Google Drive sync isn't bottleneck
-- Enable caching: `cache_rollouts: true`
 - Use `frequency='round'` for fewer API calls
 - Check network connection quality
 
@@ -561,19 +487,11 @@ The system auto-detects which mode to use based on config.
 - Protocol: File-based JSON in Google Drive
 - Format: Same as Hivemind (dict of batch_id → payloads)
 - Frequency: Configurable (generation/stage/round)
-- Caching: Local in-memory cache with invalidation
 - Retry: Exponential backoff (2^n seconds, max 3 retries)
-
-**Retention:**
-- Cleanup: Triggered after each round advancement
-- Archive: Copy to separate directory before delete
-- Policy: Keep last N rounds, configurable
-- Safety: Never deletes current or previous round
 
 **Performance:**
 - Buffering: Reduces API calls for stage/round frequencies
 - Atomic writes: Temp file + rename prevents corruption
-- Caching: Reduces redundant API reads
 - Lazy loading: Fetches only when needed
 
 **Compatibility:**
@@ -606,12 +524,10 @@ The system auto-detects which mode to use based on config.
 Potential improvements (not yet implemented):
 
 1. **Compression:** Compress rollout files to reduce storage
-2. **Time-based retention:** Keep rollouts for N days instead of N rounds
-3. **Size-based retention:** Keep last X MB of rollouts
-4. **Monitoring dashboard:** Web UI to visualize rollout sharing
-5. **Batch fetching:** Fetch multiple rounds at once
-6. **Parallel uploads:** Upload rollouts in background thread
-7. **Delta encoding:** Only store differences between rounds
+2. **Monitoring dashboard:** Web UI to visualize rollout sharing
+3. **Batch fetching:** Fetch multiple rounds at once
+4. **Parallel uploads:** Upload rollouts in background thread
+5. **Delta encoding:** Only store differences between rounds
 
 ---
 

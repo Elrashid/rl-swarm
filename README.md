@@ -172,9 +172,6 @@ All configuration is done via **environment variables**:
 
 **Rollout Sharing:**
 - `ROLLOUT_PUBLISH_FREQUENCY`: 'generation', 'stage', or 'round'
-- `ROLLOUT_CLEANUP_ENABLED`: Enable/disable cleanup
-- `ROLLOUT_KEEP_LAST_N_ROUNDS`: How many rounds to keep
-- `ROLLOUT_ARCHIVE_OLD`: Archive instead of delete
 
 ## Expected Results
 

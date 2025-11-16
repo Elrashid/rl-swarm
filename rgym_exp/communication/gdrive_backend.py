@@ -29,7 +29,6 @@ class GDriveCommunicationBackend(Communication):
         rollout_publish_frequency: str = 'stage',
         fetch_max_peers: int = 10,
         fetch_timeout_seconds: int = 30,
-        cache_rollouts: bool = True,
         **kwargs
     ):
         """
@@ -42,7 +41,6 @@ class GDriveCommunicationBackend(Communication):
             rollout_publish_frequency: 'generation', 'stage', or 'round'
             fetch_max_peers: Max peers to fetch rollouts from
             fetch_timeout_seconds: Timeout for Drive API
-            cache_rollouts: Enable local caching
         """
         super().__init__()
         self.rollout_sharing = gdrive_rollout_sharing
@@ -55,10 +53,6 @@ class GDriveCommunicationBackend(Communication):
         self.current_round = 0
         self.current_stage = 0
         self.current_generation = 0
-
-        # Local cache: {(round, stage): {peer_id: rollouts}}
-        self.cache_enabled = cache_rollouts
-        self.rollout_cache = {}
 
         get_logger().info(
             f"Initialized GDrive communication backend: "
@@ -78,7 +72,7 @@ class GDriveCommunicationBackend(Communication):
     def step_(self, value: int):
         """
         Set current step (round number).
-        Triggers cache invalidation if round changed and resets stage/generation.
+        Resets stage/generation when round changes.
         """
         if value != self.current_round:
             old_round = self.current_round
@@ -87,7 +81,6 @@ class GDriveCommunicationBackend(Communication):
             self.current_generation = 0  # Reset generation when round changes
             if old_round > 0:  # Don't log on initialization
                 get_logger().debug(f"Round advanced: {old_round} -> {value}")
-            self._invalidate_cache()
 
     def publish_state(
         self,
@@ -143,18 +136,9 @@ class GDriveCommunicationBackend(Communication):
 
         Returns:
             {peer_id: {batch_id: [payloads]}} - same format as Hivemind
-
-        Uses local cache to minimize Drive API calls.
         """
         round_num = round_num if round_num is not None else self.current_round
         stage = stage if stage is not None else self.current_stage
-
-        cache_key = (round_num, stage)
-
-        # Check cache first
-        if self.cache_enabled and cache_key in self.rollout_cache:
-            get_logger().debug(f"Using cached rollouts for round={round_num}, stage={stage}")
-            return self.rollout_cache[cache_key]
 
         # Fetch from Drive
         get_logger().debug(
@@ -168,11 +152,6 @@ class GDriveCommunicationBackend(Communication):
             exclude_peer_ids=[self.node_id],
             timeout_seconds=self.fetch_timeout
         )
-
-        # Cache the result
-        if self.cache_enabled:
-            self.rollout_cache[cache_key] = swarm_states
-            get_logger().debug(f"Cached rollouts for {cache_key}")
 
         if swarm_states:
             get_logger().info(
@@ -231,20 +210,7 @@ class GDriveCommunicationBackend(Communication):
         # Clear any leftover buffer entries from previous round to prevent key collisions
         self.rollout_sharing.clear_old_buffers(old_round)
 
-        # Trigger cleanup based on retention policy
-        self.rollout_sharing.cleanup_old_rollouts(self.current_round)
-
-        # Invalidate cache
-        self._invalidate_cache()
-
         get_logger().debug(f"Round advanced: {old_round} -> {self.current_round}")
-
-    def _invalidate_cache(self):
-        """Clear cached rollouts when round advances."""
-        if self.cache_enabled and self.rollout_cache:
-            old_size = len(self.rollout_cache)
-            self.rollout_cache.clear()
-            get_logger().debug(f"Invalidated rollout cache ({old_size} entries)")
 
     # Compatibility methods for Communication base class
     def all_gather_object(self, obj: Any) -> Dict[str | int, Any]:
