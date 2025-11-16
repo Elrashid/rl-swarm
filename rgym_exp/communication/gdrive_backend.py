@@ -196,8 +196,7 @@ class GDriveCommunicationBackend(Communication):
         old_stage = self.current_stage
 
         # Flush buffered rollouts if frequency='stage'
-        # Note: Only flush if we've completed at least one stage (stage 0+)
-        if self.publish_frequency == 'stage' and self.current_stage >= 0:
+        if self.publish_frequency == 'stage':
             self.rollout_sharing.flush_buffer(
                 self.node_id,
                 self.current_round,
@@ -213,12 +212,14 @@ class GDriveCommunicationBackend(Communication):
         old_round = self.current_round
         old_stage = self.current_stage
 
-        # Flush buffered rollouts based on frequency
-        if old_round >= 0:
+        # Flush buffered rollouts based on frequency (skip round 0 as it has no data)
+        if old_round > 0:
             if self.publish_frequency == 'round':
+                # Pass old_stage to write rollouts to the correct stage instead of defaulting to 0
                 self.rollout_sharing.flush_buffer(
                     self.node_id,
-                    old_round
+                    old_round,
+                    stage=old_stage
                 )
             # Note: For 'stage' frequency, stages are flushed in advance_stage(),
             # so no need to flush again here (would be duplicate)
@@ -226,6 +227,9 @@ class GDriveCommunicationBackend(Communication):
         self.current_round += 1
         self.current_stage = 0
         self.current_generation = 0
+
+        # Clear any leftover buffer entries from previous round to prevent key collisions
+        self.rollout_sharing.clear_old_buffers(old_round)
 
         # Trigger cleanup based on retention policy
         self.rollout_sharing.cleanup_old_rollouts(self.current_round)

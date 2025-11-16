@@ -167,7 +167,7 @@ class GameManager(abc.ABC):
                     f"Starting round: {self.state.round}/{getattr(self, 'max_round', None)}."
                 )
                 self.run_game_round()  # Loops through stages until end of round signal is received
-        except:
+        except Exception:
             get_logger().exception(
                 "Exception occurred during game run.", stack_info=True
             )

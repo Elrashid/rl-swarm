@@ -216,7 +216,7 @@ class GameTree(abc.ABC):
     def __getitem__(self, key):
         try:
             return getattr(self, str(key))
-        except:
+        except AttributeError:
             # TODO: Add warning here saying what the key is + exception that was raised that led to this.
             setattr(
                 self, str(key), []
