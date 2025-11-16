@@ -75,6 +75,10 @@ class ReasoningGymDataManager(LocalMemoryTextDataManager):
 
         # Store communication backend for fetching swarm states
         self.communication = kwargs.get("communication", None)
+
+        # Track consecutive rollout fetch failures
+        self.consecutive_fetch_failures = 0
+        self.max_consecutive_failures = 10  # Raise exception after this many failures
         try:
             self.config = CompositeConfig.from_yaml(yaml_config_path)
 
@@ -258,13 +262,14 @@ class ReasoningGymDataManager(LocalMemoryTextDataManager):
                 # Fetch from previous round (current round's rollouts aren't published yet)
                 fetch_round = max(0, current_state.round - 1)  # Can't fetch from round -1
 
-                if fetch_round >= 0 and current_state.round > 0:  # Skip round 0
+                if current_state.round > 0:  # Skip round 0 (no previous rollouts)
                     swarm_states = self.communication.get_swarm_states(
                         round_num=fetch_round,
                         stage=current_state.stage
                     )
 
                     if swarm_states:
+                        self.consecutive_fetch_failures = 0  # Reset counter on success
                         get_logger().info(
                             f"Fetched swarm states from round {fetch_round}: "
                             f"{len(swarm_states)} peers"
@@ -278,14 +283,24 @@ class ReasoningGymDataManager(LocalMemoryTextDataManager):
             except FileNotFoundError as e:
                 get_logger().warning(f"Rollout files not found for round {max(0, current_state.round - 1)}: {e}")
                 swarm_states = {}
+                self.consecutive_fetch_failures += 1
             except json.JSONDecodeError as e:
                 # JSONDecodeError is common during concurrent writes - log as warning
                 get_logger().warning(f"Corrupted rollout file for round {max(0, current_state.round - 1)} (concurrent write?): {e}")
                 swarm_states = {}
+                self.consecutive_fetch_failures += 1
+
+                # Raise exception if too many consecutive failures
+                if self.consecutive_fetch_failures >= self.max_consecutive_failures:
+                    raise RuntimeError(
+                        f"Failed to fetch valid rollouts for {self.consecutive_fetch_failures} consecutive rounds. "
+                        "Swarm coordination may be broken."
+                    )
             except Exception as e:
                 # Catch all other unexpected exceptions
                 get_logger().error(f"Failed to fetch swarm states from round {max(0, current_state.round - 1)}: {e}")
                 swarm_states = {}
+                self.consecutive_fetch_failures += 1
 
         if self.num_transplant_trees > 0:
             trees = current_state.trees
@@ -330,8 +345,8 @@ class ReasoningGymDataManager(LocalMemoryTextDataManager):
         swarm_states: Dict[Any, Any],
         num_transplants: int,
     ) -> Dict[Tuple[Any], Any]:
-        # Loop through and return a set of num_transplant transplants to add
-        transplants = {}
+        # Collect all valid transplants first, then randomly sample to avoid bias
+        all_transplants = {}
         for agent in swarm_states:
             if not isinstance(agent, str):
                 continue
@@ -343,8 +358,7 @@ class ReasoningGymDataManager(LocalMemoryTextDataManager):
                         continue
                     for payload in swarm_states[agent][batch_id]:
                         if (
-                            self.num_generations
-                            and isinstance(payload, Payload)
+                            isinstance(payload, Payload)
                             and hasattr(payload, "actions")
                             and payload.actions is not None
                             and isinstance(payload.actions, list)
@@ -352,13 +366,16 @@ class ReasoningGymDataManager(LocalMemoryTextDataManager):
                             and all([isinstance(action, str) for action in payload.actions])
                         ):
                             # Log warning if generation count mismatch (but still accept)
-                            if len(payload.actions) != self.num_generations:
+                            if self.num_generations and len(payload.actions) != self.num_generations:
                                 get_logger().warning(
                                     f"Transplant from {agent} has {len(payload.actions)} generations, "
                                     f"expected {self.num_generations}. Accepting anyway."
                                 )
-                            transplants[(agent, batch_id)] = payload
-                            if len(transplants) >= num_transplants:
-                                return transplants
+                            all_transplants[(agent, batch_id)] = payload
 
-        return transplants
+        # Randomly sample num_transplants to avoid bias
+        if len(all_transplants) <= num_transplants:
+            return all_transplants
+
+        selected_keys = random.sample(list(all_transplants.keys()), num_transplants)
+        return {key: all_transplants[key] for key in selected_keys}

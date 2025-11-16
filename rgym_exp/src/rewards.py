@@ -9,9 +9,9 @@ class RGRewards:
     def cumulative_reward(
         self, completions, answer, metadata, include_formatting=False
     ):
-        if completions is None or not completions or not isinstance(completions, list):
-            return [0.0]
-        if answer is None or not answer:
+        if completions is None or not isinstance(completions, list):
+            return []
+        if not completions or answer is None or not answer:
             return [0.0] * len(completions)
 
         correctness = accuracy_reward(completions, answer, metadata, weight=1.0)

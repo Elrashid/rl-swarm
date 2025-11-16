@@ -73,6 +73,7 @@ class GradientAdaptiveIJ:
         # Initialize J to middle of range by default
         if initial_J is None:
             initial_J = total_samples / 2.0
+        self.initial_J = float(initial_J)  # Save for reset()
         self.J_continuous = float(initial_J)
 
         # Set valid range
@@ -206,7 +207,7 @@ class GradientAdaptiveIJ:
 
     def reset(self):
         """Reset the adapter to initial state (useful for multiple experiments)."""
-        self.J_continuous = self.total_samples / 2.0
+        self.J_continuous = self.initial_J  # Use saved initial value
         self.baseline_reward = 0.0
         self.rounds_completed = 0
         self.history = {

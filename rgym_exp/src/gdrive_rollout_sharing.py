@@ -384,7 +384,11 @@ class GDriveRolloutSharing:
                 reconstructed_rollouts = {}
                 for batch_id, payload_list in data['rollouts'].items():
                     # Convert string batch_id back to int
-                    batch_id_int = int(batch_id)
+                    try:
+                        batch_id_int = int(batch_id)
+                    except ValueError:
+                        get_logger().warning(f"Invalid batch_id '{batch_id}' in rollout from {peer_id}, skipping")
+                        continue
                     reconstructed_rollouts[batch_id_int] = []
 
                     for payload_data in payload_list:

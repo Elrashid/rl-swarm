@@ -54,10 +54,10 @@ def main():
         max_round = 3
         max_stage = int(os.environ.get('MAX_STAGES', '1'))
         num_generations = 4
-        num_transplant_trees = int(os.environ.get('NUM_TRANSPLANT_TREES', '0'))
+        num_transplant_trees = int(os.environ.get('NUM_TRANSPLANT_TREES', '2'))  # Test rollout sharing
         num_train_samples = 4
         dtype = 'float32'
-        get_logger().info("🧪 TEST MODE ENABLED: 3 rounds, 4 samples, 4 generations")
+        get_logger().info("🧪 TEST MODE ENABLED: 3 rounds, 4 samples, 4 generations, 2 transplants")
     else:
         # Normal mode: use env vars or defaults
         max_round = int(os.environ.get('MAX_ROUNDS', '2000'))
@@ -200,8 +200,12 @@ def main():
     # (using manual .to() instead of device_map allows multiple processes on same GPU)
     import torch
     if torch.cuda.is_available():
-        model = model.to('cuda:0')
-        get_logger().info(f"✓ Model placed on GPU (CUDA available)")
+        try:
+            model = model.to('cuda:0')
+            get_logger().info(f"✓ Model placed on GPU (CUDA available)")
+        except RuntimeError as e:
+            get_logger().warning(f"Failed to place model on cuda:0 ({e}), falling back to CPU")
+            model = model.to('cpu')
     else:
         get_logger().info("✓ Model on CPU (no CUDA)")
 

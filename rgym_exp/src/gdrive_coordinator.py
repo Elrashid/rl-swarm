@@ -162,11 +162,8 @@ class GDriveSwarmCoordinator:
         # Atomic write: write to temp, then rename
         self._write_json_with_retry(temp_file, data)
 
-        # Use replace for atomic operation
-        if os.path.exists(state_file):
-            os.replace(temp_file, state_file)
-        else:
-            os.rename(temp_file, state_file)
+        # Use replace for atomic operation (works whether destination exists or not)
+        os.replace(temp_file, state_file)
 
         get_logger().info(f"Updated round={new_round}, stage={new_stage}")
 
@@ -316,12 +313,8 @@ def init_experiment(gdrive_base_path: str, experiment_name: str, config_override
     with open(state_file, 'w') as f:
         json.dump(state, f, indent=2)
 
-    # Save config overrides if provided
-    if config_overrides:
-        import yaml
-        config_file = os.path.join(exp_path, 'config.yaml')
-        with open(config_file, 'w') as f:
-            yaml.dump(config_overrides, f)
+    # Config overrides are stored in state.json, no separate YAML file
+    # (YAML support removed in this fork - all config via env vars)
 
     get_logger().info(f"Initialized experiment: {experiment_name} at {exp_path}")
     return exp_path

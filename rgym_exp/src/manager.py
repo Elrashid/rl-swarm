@@ -163,7 +163,7 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
 
     def _get_total_rewards_by_agent(self):
         rewards_by_agent = defaultdict(int)
-        for stage in range(self.state.stage):
+        for stage in range(self.state.stage + 1):  # Include current stage
             rewards = self.rewards[stage]
             for agent_id, agent_rewards in rewards.items():
                 for batch_id, batch_rewards in agent_rewards.items():
@@ -227,12 +227,12 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
 
     def _hook_after_rewards_updated(self):
         signal_by_agent = self._get_total_rewards_by_agent()
-        self.batched_signals += self._get_my_rewards(signal_by_agent)
+        my_reward = self._get_my_rewards(signal_by_agent)  # Calculate once, reuse
+        self.batched_signals += my_reward
         self._try_submit_to_chain(signal_by_agent)
 
         # Accumulate rewards for adaptive I/J algorithm
         if self.adaptive_ij is not None:
-            my_reward = self._get_my_rewards(signal_by_agent)
             self.round_rewards_accumulator.append(my_reward)
 
         # NOTE: Rollout publishing now happens in run_game_round() via all_gather_object()
@@ -393,7 +393,7 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
                 time.sleep(check_interval)
                 continue
 
-            if round_num >= self.state.round:
+            if round_num > self.state.round:
                 get_logger().info(f"🐝 Joining round: {round_num}")
                 check_backoff = check_interval  # Reset backoff after successful round
                 self.state.round = round_num  # advance to swarm's round.
