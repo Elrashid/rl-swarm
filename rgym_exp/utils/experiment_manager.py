@@ -324,6 +324,50 @@ def cleanup_experiment(gdrive_base_path: str, experiment_name: str, keep_checkpo
         get_logger().error(f"Error cleaning experiment: {e}")
 
 
+def get_cumulative_rewards(gdrive_base_path: str, experiment_name: str) -> Dict[str, float]:
+    """
+    Get cumulative rewards for all nodes in an experiment (SAPO paper metric).
+
+    Args:
+        gdrive_base_path: Base path in Google Drive
+        experiment_name: Name of experiment
+
+    Returns:
+        Dictionary mapping node_id to cumulative reward
+    """
+    exp_path = os.path.join(gdrive_base_path, 'experiments', experiment_name)
+    logs_dir = os.path.join(exp_path, 'logs')
+
+    if not os.path.exists(logs_dir):
+        return {}
+
+    cumulative_rewards = {}
+
+    try:
+        # Read cumulative metrics from each node
+        for node_dir in os.listdir(logs_dir):
+            cumulative_file = os.path.join(logs_dir, node_dir, 'cumulative_metrics.jsonl')
+
+            if not os.path.exists(cumulative_file):
+                continue
+
+            # Read last line (most recent cumulative value)
+            with open(cumulative_file, 'r') as f:
+                lines = f.readlines()
+                if lines:
+                    try:
+                        last_entry = json.loads(lines[-1])
+                        peer_id = last_entry.get('peer_id', node_dir)
+                        cumulative_rewards[peer_id] = last_entry.get('cumulative_reward', 0.0)
+                    except json.JSONDecodeError:
+                        continue
+
+    except Exception as e:
+        get_logger().error(f"Error getting cumulative rewards: {e}")
+
+    return cumulative_rewards
+
+
 def get_experiment_status(gdrive_base_path: str, experiment_name: str) -> Dict[str, Any]:
     """
     Get current status of an experiment.
@@ -372,6 +416,12 @@ def get_experiment_status(gdrive_base_path: str, experiment_name: str) -> Dict[s
                     checkpoint_rounds.append(round_num)
             if checkpoint_rounds:
                 status['latest_checkpoint'] = max(checkpoint_rounds)
+
+        # Get cumulative rewards (SAPO paper metric)
+        cumulative_rewards = get_cumulative_rewards(gdrive_base_path, experiment_name)
+        if cumulative_rewards:
+            status['cumulative_rewards'] = cumulative_rewards
+            status['total_cumulative_reward'] = sum(cumulative_rewards.values())
 
         # Get metrics summary
         metrics_df = get_experiment_metrics(gdrive_base_path, experiment_name)
