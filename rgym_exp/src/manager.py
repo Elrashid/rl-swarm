@@ -115,6 +115,10 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
         self.submit_period = submit_period_hours  # hours (configurable, default 0.0 = every round)
         self.submitted_this_round = False
 
+        # Cumulative reward tracking (SAPO paper metric)
+        self.cumulative_reward = 0.0  # Running total of all rewards for this node
+        self.log_dir = log_dir
+
         # Adaptive I/J algorithm (optional)
         self.adaptive_ij = adaptive_ij
         self.round_rewards_accumulator = []  # Track rewards during round for adaptive I/J
@@ -257,6 +261,11 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
         signal_by_agent = self._get_total_rewards_by_agent()
         my_reward = self._get_my_rewards(signal_by_agent)  # Calculate once, reuse
         self.batched_signals += my_reward
+
+        # Update cumulative reward (SAPO paper metric)
+        self.cumulative_reward += my_reward
+        self._log_cumulative_metrics()
+
         self._try_submit_to_chain(signal_by_agent)
 
         # Log per-stage reward breakdown for detailed analysis
@@ -314,6 +323,44 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
 
         # NOTE: communication.advance_round() is already called in run_game_round() line 150
         # No need to call it again here (was causing double increment)
+
+    def _log_cumulative_metrics(self):
+        """
+        Log cumulative reward metrics to disk (SAPO paper metric).
+        Writes to cumulative_metrics.jsonl for easy monitoring.
+        """
+        import json
+        import time
+
+        try:
+            # Write to local log directory
+            cumulative_file = os.path.join(self.log_dir, 'cumulative_metrics.jsonl')
+
+            metrics = {
+                'timestamp': time.time(),
+                'round': self.state.round,
+                'peer_id': self.peer_id,
+                'cumulative_reward': float(self.cumulative_reward),
+                'average_reward_per_round': float(self.cumulative_reward / (self.state.round + 1)) if self.state.round >= 0 else 0.0
+            }
+
+            with open(cumulative_file, 'a') as f:
+                f.write(json.dumps(metrics) + '\n')
+
+            # Also log to GDrive if available
+            if self.gdrive_logger:
+                self.gdrive_logger.log_metrics(
+                    self.state.round,
+                    0,  # stage 0 for round-level metrics
+                    {
+                        'cumulative_reward': float(self.cumulative_reward),
+                        'average_reward_per_round': float(self.cumulative_reward / (self.state.round + 1)) if self.state.round >= 0 else 0.0,
+                        'is_cumulative_metric': True
+                    }
+                )
+
+        except Exception as e:
+            get_logger().debug(f"Failed to log cumulative metrics: {e}")
 
     def _update_adaptive_ij(self):
         """Update I/J values using adaptive algorithm based on round reward."""
