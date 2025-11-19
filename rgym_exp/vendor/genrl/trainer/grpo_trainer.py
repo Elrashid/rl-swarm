@@ -10,6 +10,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 
 from rgym_exp.vendor.genrl.data import DataManager
 from rgym_exp.vendor.genrl.logging_utils.ml_logger import LoggerMixin
+from rgym_exp.vendor.genrl.logging_utils.global_defs import get_logger
 from rgym_exp.vendor.genrl.rewards import RewardManager
 from rgym_exp.vendor.genrl.state import GameState
 from rgym_exp.vendor.genrl.trainer import TrainerModule
@@ -403,13 +404,30 @@ class GRPOLanguageTrainerModule(TrainerModule, LoggerMixin):
         assert stage_inputs is not None, f"No inputs found for stage {stage}"
         # Unflatten stage's outputs
         stage_actions = state.get_stage_actions(stage)
-        stage_outputs = [
-            stage_actions[index_mapping[idx][0]][index_mapping[idx][1]][
-                index_mapping[idx][2]
-            ]
-            for idx, _ in enumerate(index_mapping)
-        ]
-        assert stage_outputs is not None, f"No outputs found for stage {stage}"
+        stage_outputs = []
+        for idx, _ in enumerate(index_mapping):
+            agent_idx = index_mapping[idx][0]
+            batch_idx = index_mapping[idx][1]
+            node_idx = index_mapping[idx][2]
+
+            # Check if the path exists
+            if (agent_idx in stage_actions and
+                batch_idx in stage_actions[agent_idx] and
+                node_idx < len(stage_actions[agent_idx][batch_idx]) and
+                stage_actions[agent_idx][batch_idx][node_idx] is not None):
+                stage_outputs.append(stage_actions[agent_idx][batch_idx][node_idx])
+            else:
+                # Skip this output if it doesn't exist
+                get_logger().warning(
+                    f"Missing action at agent={agent_idx}, batch={batch_idx}, node={node_idx} for stage {stage}"
+                )
+                # Use empty list as placeholder to avoid None
+                stage_outputs.append([])
+
+        if not stage_outputs or all(not o for o in stage_outputs):
+            get_logger().error(f"No valid outputs found for stage {stage}")
+            # Return early to avoid training on empty data
+            return global_step
 
         model_inputs = {}
         processed_inputs = self._process_inputs(stage_inputs, for_training=True)

@@ -161,11 +161,19 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
         # PHASE 2: FETCHING AND TRAINING
         get_logger().info(f"SAPO Phase 2: Fetching external rollouts and training")
 
+        # Save the current state before calling prepare_states
+        # (we've already advanced stage, but rollouts are from stage 0)
+        saved_stage = self.state.stage
+        self.state.stage = 0  # Temporarily reset to fetch stage 0 rollouts
+
         # Now fetch the rollouts from THIS round (not previous)
         # This happens AFTER all nodes have published
         world_states = self.data_manager.prepare_states(
             self.state, None  # Will fetch from current round
         )
+
+        # Restore the stage
+        self.state.stage = saved_stage
 
         self.rewards.update_rewards(
             self.state
