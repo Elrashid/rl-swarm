@@ -109,7 +109,6 @@ export NUM_TRANSPLANT_TREES="4"
 export NUM_GENERATIONS="8"
 export MAX_ROUNDS="10"                       # Testing: 10 rounds (~6 min)
 export CHECKPOINT_INTERVAL="100"
-export ROLLOUT_PUBLISH_FREQUENCY="stage"
 
 python -m rgym_exp.runner.swarm_launcher
 
@@ -124,7 +123,6 @@ export NUM_TRANSPLANT_TREES="4"
 export NUM_GENERATIONS="8"
 export MAX_ROUNDS="10"
 export CHECKPOINT_INTERVAL="100"
-export ROLLOUT_PUBLISH_FREQUENCY="stage"
 
 python -m rgym_exp.runner.swarm_launcher
 
@@ -169,9 +167,6 @@ All configuration is done via **environment variables**:
 - `NUM_TRANSPLANT_TREES`: Number of external rollouts (J parameter)
 - `NUM_GENERATIONS`: Number of completions per question (G parameter)
 - `MAX_ROUNDS`: Total training rounds
-
-**Rollout Sharing:**
-- `ROLLOUT_PUBLISH_FREQUENCY`: 'generation', 'stage', or 'round'
 
 ## Expected Results
 

@@ -331,12 +331,20 @@ class ReasoningGymDataManager(LocalMemoryTextDataManager):
                     trees[agent][batch_id] = current_state.game_tree_factory(
                         received_states
                     )
-                    trees[agent][batch_id].append_node_actions(
-                        stage=current_state.stage, node_idx=0, actions=received_actions
-                    )
-                    trees[agent][batch_id][current_state.stage][0][
-                        "metadata"
-                    ] = received_metadata
+                    # Check if tree has nodes at current stage before appending
+                    stage_nodes = trees[agent][batch_id][current_state.stage]
+                    if stage_nodes and len(stage_nodes) > 0:
+                        trees[agent][batch_id].append_node_actions(
+                            stage=current_state.stage, node_idx=0, actions=received_actions
+                        )
+                        trees[agent][batch_id][current_state.stage][0][
+                            "metadata"
+                        ] = received_metadata
+                    else:
+                        get_logger().warning(
+                            f"Skipping external rollout from {agent} batch {batch_id}: "
+                            f"tree has no nodes at stage {current_state.stage}"
+                        )
                 else:  # we already have this tree, and actions were appended in run_game_stage()
                     pass
         world_state = current_state.get_latest_state()

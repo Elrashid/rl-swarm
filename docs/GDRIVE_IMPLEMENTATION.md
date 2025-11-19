@@ -225,9 +225,6 @@ NODE_ID = 'coordinator_0'
 MODEL_NAME = 'Gensyn/Qwen2.5-0.5B-Instruct'
 SEED = 42
 
-# Rollout Configuration
-ROLLOUT_PUBLISH_FREQUENCY = 'stage'
-
 # Run all cells
 ```
 
@@ -241,9 +238,6 @@ EXPERIMENT_NAME = 'qwen_0.6b_seed42'  # SAME as coordinator
 NODE_ID = 'worker_1'                  # DIFFERENT for each worker
 MODEL_NAME = 'Gensyn/Qwen2.5-0.5B-Instruct'  # SAME
 SEED = 42                             # SAME
-
-# Rollout Configuration (should match coordinator)
-ROLLOUT_PUBLISH_FREQUENCY = 'stage'
 
 # Run all cells
 ```
