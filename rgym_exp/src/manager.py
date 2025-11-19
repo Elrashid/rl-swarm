@@ -130,26 +130,59 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
 
     def run_game_round(self):
         """
-        Override to call communication hooks after stage/round advances.
-        This ensures rollouts are flushed at the right time in GDrive mode.
+        SAPO Two-Phase Training:
+        Phase 1: All nodes generate and publish rollouts
+        Synchronization barrier
+        Phase 2: All nodes fetch rollouts and train
         """
+        # PHASE 1: GENERATION - All nodes generate rollouts
+        get_logger().info(f"SAPO Phase 1: Generating rollouts for round {self.state.round}")
+
         # Loop through stages until end of round is hit
         while not self.end_of_round():
             self.run_game_stage()  # Generates rollout and updates the game state
+
+            # Publish immediately (no buffering due to our fix)
             swarm_payloads = self.communication.all_gather_object(
                 self.state.get_latest_communication()[self.rank]
             )
-            world_states = self.data_manager.prepare_states(
-                self.state, swarm_payloads
-            )  # Maps states received via communication with the swarm to RL game tree world states
-            self.state.advance_stage(world_states)  # Prepare for next stage
-            # IMPORTANT: Call communication hook after stage advance to flush buffered rollouts
+
+            # Don't prepare states yet - wait for synchronization
+            self.state.advance_stage({})  # Advance stage without external data for now
             self.communication.advance_stage()
+
+        # SYNCHRONIZATION BARRIER
+        # Give time for all nodes to write their rollouts to disk
+        import time
+        sync_wait_time = 2.0  # Wait 2 seconds for file system sync
+        get_logger().info(f"SAPO Sync: Waiting {sync_wait_time}s for all nodes to publish")
+        time.sleep(sync_wait_time)
+
+        # PHASE 2: FETCHING AND TRAINING
+        get_logger().info(f"SAPO Phase 2: Fetching external rollouts and training")
+
+        # Now fetch the rollouts from THIS round (not previous)
+        # This happens AFTER all nodes have published
+        world_states = self.data_manager.prepare_states(
+            self.state, None  # Will fetch from current round
+        )
 
         self.rewards.update_rewards(
             self.state
         )  # Compute reward functions now that we have all the data needed for this round
         self._hook_after_rewards_updated()  # Call hook
+
+        # SAPO FIX: Submit rewards to coordinator
+        if self.coordinator:
+            total_rewards = self._get_total_rewards_by_agent()
+            my_reward = self._get_my_rewards(total_rewards)
+            self.coordinator.submit_reward(
+                round_num=self.state.round,
+                stage_num=0,  # Aggregate for all stages
+                reward=my_reward,
+                peer_id=self.peer_id
+            )
+            get_logger().info(f"SAPO: Submitted reward {my_reward:.4f} for round {self.state.round}")
 
         from rgym_exp.vendor.genrl.game import RunType
         if self.mode in [RunType.Train, RunType.TrainAndEvaluate]:
@@ -546,9 +579,11 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
             # Check how many workers have submitted
             try:
                 submissions = self.coordinator.get_submissions_for_round(current_round, 0)
-                active_peers = self.coordinator.get_active_peers()
+                active_workers = self.coordinator.get_active_workers()  # Use new method that excludes coordinator
+                # Count only worker submissions (exclude coordinator)
+                worker_submissions = [s for s in submissions if not (s.startswith('node_0') or 'coordinator' in s.lower())]
                 get_logger().info(
-                    f"📥 Round {current_round}: {len(submissions)}/{len(active_peers)} workers submitted"
+                    f"📥 Round {current_round}: {len(worker_submissions)}/{len(active_workers)} workers submitted"
                 )
             except Exception as e:
                 get_logger().warning(f"Failed to check submissions: {e}")

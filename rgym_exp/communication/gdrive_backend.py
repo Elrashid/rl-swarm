@@ -26,7 +26,6 @@ class GDriveCommunicationBackend(Communication):
         gdrive_rollout_sharing: GDriveRolloutSharing,
         node_id: str,
         experiment_name: str,
-        rollout_publish_frequency: str = 'stage',
         fetch_max_peers: int = 10,
         fetch_timeout_seconds: int = 30,
         **kwargs
@@ -38,7 +37,6 @@ class GDriveCommunicationBackend(Communication):
             gdrive_rollout_sharing: Instance of GDriveRolloutSharing
             node_id: Unique node identifier (UUID, no crypto needed)
             experiment_name: Name of current experiment
-            rollout_publish_frequency: 'generation', 'stage', or 'round'
             fetch_max_peers: Max peers to fetch rollouts from
             fetch_timeout_seconds: Timeout for Drive API
         """
@@ -46,7 +44,6 @@ class GDriveCommunicationBackend(Communication):
         self.rollout_sharing = gdrive_rollout_sharing
         self.node_id = node_id
         self.experiment_name = experiment_name
-        self.publish_frequency = rollout_publish_frequency
         self.fetch_max_peers = fetch_max_peers
         self.fetch_timeout = fetch_timeout_seconds
 
@@ -55,8 +52,7 @@ class GDriveCommunicationBackend(Communication):
         self.current_generation = 0
 
         get_logger().info(
-            f"Initialized GDrive communication backend: "
-            f"node_id={node_id}, frequency={rollout_publish_frequency}"
+            f"Initialized GDrive communication backend: node_id={node_id}"
         )
 
     def get_id(self) -> str:
@@ -89,22 +85,17 @@ class GDriveCommunicationBackend(Communication):
         generation: Optional[int] = None
     ):
         """
-        Publish local rollouts to Google Drive.
+        Publish local rollouts to Google Drive immediately.
 
         Args:
             state_dict: Contains rollouts in format {batch_id: [payloads]}
             stage: Current stage number (optional, uses self.current_stage if None)
             generation: Current generation (optional, uses self.current_generation if None)
-
-        Behavior depends on rollout_publish_frequency:
-            - 'generation': Publishes immediately
-            - 'stage': Buffers until end of stage
-            - 'round': Buffers until end of round
         """
         stage = stage if stage is not None else self.current_stage
         generation = generation if generation is not None else self.current_generation
 
-        published = self.rollout_sharing.publish_rollouts(
+        self.rollout_sharing.publish_rollouts(
             peer_id=self.node_id,
             round_num=self.current_round,
             stage=stage,
@@ -112,15 +103,10 @@ class GDriveCommunicationBackend(Communication):
             rollouts_dict=state_dict
         )
 
-        if published:
-            get_logger().debug(
-                f"Published rollouts: round={self.current_round}, "
-                f"stage={stage}, generation={generation}"
-            )
-        else:
-            get_logger().debug(
-                f"Buffered rollouts (will publish at end of {self.publish_frequency})"
-            )
+        get_logger().debug(
+            f"Published rollouts: round={self.current_round}, "
+            f"stage={stage}, generation={generation}"
+        )
 
     def get_swarm_states(
         self,
@@ -174,14 +160,6 @@ class GDriveCommunicationBackend(Communication):
         """Notify backend that stage has advanced."""
         old_stage = self.current_stage
 
-        # Flush buffered rollouts if frequency='stage'
-        if self.publish_frequency == 'stage':
-            self.rollout_sharing.flush_buffer(
-                self.node_id,
-                self.current_round,
-                old_stage
-            )
-
         self.current_stage += 1
         self.current_generation = 0
         get_logger().debug(f"Stage advanced: {old_stage} -> {self.current_stage}")
@@ -189,26 +167,10 @@ class GDriveCommunicationBackend(Communication):
     def advance_round(self):
         """Notify backend that round has advanced."""
         old_round = self.current_round
-        old_stage = self.current_stage
-
-        # Flush buffered rollouts based on frequency (skip round 0 as it has no data)
-        if old_round > 0:
-            if self.publish_frequency == 'round':
-                # Pass old_stage to write rollouts to the correct stage instead of defaulting to 0
-                self.rollout_sharing.flush_buffer(
-                    self.node_id,
-                    old_round,
-                    stage=old_stage
-                )
-            # Note: For 'stage' frequency, stages are flushed in advance_stage(),
-            # so no need to flush again here (would be duplicate)
 
         self.current_round += 1
         self.current_stage = 0
         self.current_generation = 0
-
-        # Clear any leftover buffer entries from previous round to prevent key collisions
-        self.rollout_sharing.clear_old_buffers(old_round)
 
         get_logger().debug(f"Round advanced: {old_round} -> {self.current_round}")
 

@@ -1,2 +1,0 @@
-{"timestamp": 1763545169.7435195, "elapsed_seconds": 2.1457672119140625e-06, "event": "training_started", "node_id": "node_0", "experiment": "sapo_SmolLM_config2_4loc4ext"}
-{"timestamp": 1763548184.8783662, "elapsed_seconds": 3015.134848833084, "event": "training_complete", "total_rounds": 50, "node_id": "node_0", "total_elapsed_seconds": 3015.134840965271}

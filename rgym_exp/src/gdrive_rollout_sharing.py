@@ -2,7 +2,6 @@
 Google Drive Rollout Sharing Module
 
 Manages rollout publishing and fetching via Google Drive files.
-Supports configurable publish frequency and retention policies.
 """
 
 import json
@@ -120,15 +119,14 @@ class GDriveRolloutSharing:
     Manages rollout file operations on Google Drive.
 
     Supports:
-    - Configurable publish frequency (generation/stage/round)
+    - Immediate rollout publishing for SAPO
     - Retry logic for API rate limits
     """
 
     def __init__(
         self,
         gdrive_path: str,
-        experiment_name: str,
-        publish_frequency: str = 'stage'
+        experiment_name: str
     ):
         """
         Initialize rollout sharing.
@@ -136,11 +134,9 @@ class GDriveRolloutSharing:
         Args:
             gdrive_path: Base Google Drive path (e.g., /content/drive/MyDrive/rl-swarm)
             experiment_name: Name of experiment (e.g., qwen_0.6b_seed42)
-            publish_frequency: When to publish - 'generation', 'stage', or 'round'
         """
         self.gdrive_path = gdrive_path
         self.experiment_name = experiment_name
-        self.publish_frequency = publish_frequency
 
         # Paths
         self.rollouts_path = os.path.join(
@@ -150,13 +146,7 @@ class GDriveRolloutSharing:
         # Create directories
         os.makedirs(self.rollouts_path, exist_ok=True)
 
-        # Buffering for stage/round frequencies
-        self._rollout_buffer = {}  # {(peer_id, round, stage): [rollouts_dicts]}
-
-        get_logger().info(
-            f"Initialized GDrive rollout sharing: "
-            f"frequency={publish_frequency}"
-        )
+        get_logger().info("Initialized GDrive rollout sharing")
 
     def publish_rollouts(
         self,
@@ -167,7 +157,7 @@ class GDriveRolloutSharing:
         rollouts_dict: Dict[int, List[Any]]
     ) -> bool:
         """
-        Publish rollouts to Google Drive based on configured frequency.
+        Publish rollouts to Google Drive immediately for SAPO.
 
         Args:
             peer_id: Node identifier
@@ -177,87 +167,14 @@ class GDriveRolloutSharing:
             rollouts_dict: {batch_id: [payloads]} from trainer
 
         Returns:
-            True if published, False if buffered for later
+            True if published successfully
         """
-        if self.publish_frequency == 'generation':
-            # Publish immediately
-            self._write_rollouts_to_drive(peer_id, round_num, stage, rollouts_dict)
-            return True
-
-        elif self.publish_frequency == 'stage':
-            # Buffer until stage ends
-            buffer_key = (peer_id, round_num, stage)
-            if buffer_key not in self._rollout_buffer:
-                self._rollout_buffer[buffer_key] = []
-            self._rollout_buffer[buffer_key].append(rollouts_dict)
-            return False
-
-        elif self.publish_frequency == 'round':
-            # Buffer until round ends
-            buffer_key = (peer_id, round_num)
-            if buffer_key not in self._rollout_buffer:
-                self._rollout_buffer[buffer_key] = []
-            self._rollout_buffer[buffer_key].append(rollouts_dict)
-            return False
-
-        else:
-            get_logger().error(f"Invalid publish_frequency: {self.publish_frequency}")
-            return False
-
-    def flush_buffer(
-        self,
-        peer_id: str,
-        round_num: int,
-        stage: Optional[int] = None
-    ):
-        """
-        Flush buffered rollouts to Drive.
-
-        Args:
-            peer_id: Node identifier
-            round_num: Round number
-            stage: Stage number (for stage frequency, None for round frequency)
-        """
-        if self.publish_frequency == 'stage' and stage is not None:
-            buffer_key = (peer_id, round_num, stage)
-        elif self.publish_frequency == 'round':
-            buffer_key = (peer_id, round_num)
-        else:
-            return
-
-        if buffer_key not in self._rollout_buffer:
-            return
-
-        # Merge all buffered rollouts
-        merged_rollouts = {}
-        for rollouts_dict in self._rollout_buffer[buffer_key]:
-            for batch_id, payloads in rollouts_dict.items():
-                if batch_id not in merged_rollouts:
-                    merged_rollouts[batch_id] = []
-                merged_rollouts[batch_id].extend(payloads)
-
-        # Write to Drive
-        stage_to_write = stage if stage is not None else 0
-        self._write_rollouts_to_drive(peer_id, round_num, stage_to_write, merged_rollouts)
-
-        # Clear buffer
-        del self._rollout_buffer[buffer_key]
-        get_logger().debug(f"Flushed buffer for {buffer_key}")
-
-    def clear_old_buffers(self, old_round: int):
-        """
-        Clear any leftover buffer entries from previous rounds to prevent key collisions.
-
-        Args:
-            old_round: The round number that just completed
-        """
-        keys_to_remove = [
-            key for key in self._rollout_buffer.keys()
-            if (isinstance(key, tuple) and len(key) >= 2 and key[1] <= old_round)
-        ]
-        for key in keys_to_remove:
-            del self._rollout_buffer[key]
-            get_logger().warning(f"Cleared unflushed buffer entry: {key}")
+        # Always publish immediately to enable same-round fetching
+        self._write_rollouts_to_drive(peer_id, round_num, stage, rollouts_dict)
+        get_logger().debug(
+            f"Published rollouts for round={round_num}, stage={stage}"
+        )
+        return True
 
     def _write_rollouts_to_drive(
         self,
@@ -293,7 +210,6 @@ class GDriveRolloutSharing:
             'round': round_num,
             'stage': stage,
             'timestamp': time.time(),
-            'publish_frequency': self.publish_frequency,
             'rollouts': convert_payload_to_dict(rollouts_dict)
         }
 

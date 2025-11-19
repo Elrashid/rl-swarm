@@ -255,6 +255,18 @@ class GDriveSwarmCoordinator:
             get_logger().error(f"Error getting active peers: {e}")
             return []
 
+    def get_active_workers(self) -> List[str]:
+        """
+        Get list of active worker IDs (excludes coordinator).
+
+        Returns:
+            List of worker peer IDs (excluding node_0 coordinator)
+        """
+        all_peers = self.get_active_peers()
+        # Filter out coordinators (node_0, coordinator_0, etc.)
+        workers = [p for p in all_peers if not (p.startswith('node_0') or 'coordinator' in p.lower())]
+        return workers
+
     def get_submissions_for_round(self, round_num: int, stage_num: int) -> List[str]:
         """
         Get peer IDs that have submitted rewards for a specific round/stage.

@@ -259,26 +259,24 @@ class ReasoningGymDataManager(LocalMemoryTextDataManager):
         # Fetch swarm states from communication backend if not provided
         if (swarm_states is None or not swarm_states) and self.communication is not None:
             try:
-                # Fetch from previous round (current round's rollouts aren't published yet)
-                fetch_round = max(0, current_state.round - 1)  # Can't fetch from round -1
+                # SAPO FIX: Fetch from CURRENT round (two-phase training ensures they're available)
+                fetch_round = current_state.round  # Fetch from same round
+                fetch_stage = 0  # Always fetch from stage 0 (most rounds have single stage)
 
-                if current_state.round > 0:  # Skip round 0 (no previous rollouts)
-                    swarm_states = self.communication.get_swarm_states(
-                        round_num=fetch_round,
-                        stage=current_state.stage
+                # Always try to fetch, even for round 0
+                swarm_states = self.communication.get_swarm_states(
+                    round_num=fetch_round,
+                    stage=fetch_stage
+                )
+
+                if swarm_states:
+                    self.consecutive_fetch_failures = 0  # Reset counter on success
+                    get_logger().info(
+                        f"SAPO: Fetched swarm states from CURRENT round {fetch_round}: "
+                        f"{len(swarm_states)} peers with external rollouts"
                     )
-
-                    if swarm_states:
-                        self.consecutive_fetch_failures = 0  # Reset counter on success
-                        get_logger().info(
-                            f"Fetched swarm states from round {fetch_round}: "
-                            f"{len(swarm_states)} peers"
-                        )
-                    else:
-                        get_logger().debug(f"No swarm states found for round {fetch_round}")
                 else:
-                    swarm_states = {}
-                    get_logger().debug("Round 0: No previous rollouts to fetch")
+                    get_logger().debug(f"No swarm states found for round {fetch_round}, stage {fetch_stage}")
 
             except FileNotFoundError as e:
                 get_logger().warning(f"Rollout files not found for round {fetch_round}: {e}")

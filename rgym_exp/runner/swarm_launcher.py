@@ -53,8 +53,6 @@ def main():
     num_train_samples = int(os.environ.get('NUM_TRAIN_SAMPLES', '8'))
     dtype = 'float32'
 
-    # Rollout sharing config
-    rollout_publish_frequency = os.environ.get('ROLLOUT_PUBLISH_FREQUENCY', 'stage')
 
     # Adaptive I/J config
     adaptive_ij_enabled = os.environ.get('ADAPTIVE_IJ_ENABLED', 'False').lower() == 'true'
@@ -111,7 +109,6 @@ def main():
     get_logger().info(f"Node ID: {node_id}")
     get_logger().info(f"Model: {model_name}")
     get_logger().info(f"GDrive Path: {gdrive_path}")
-    get_logger().info(f"Rollout Frequency: {rollout_publish_frequency}")
     get_logger().info(f"Training Config: I={num_train_samples}, J={num_transplant_trees}, G={num_generations}")
     get_logger().info(f"Max Rounds: {max_round}")
     get_logger().info("="*60)
@@ -121,8 +118,7 @@ def main():
     # =======================
     rollout_sharing = GDriveRolloutSharing(
         gdrive_path=gdrive_path,
-        experiment_name=experiment_name,
-        publish_frequency=rollout_publish_frequency
+        experiment_name=experiment_name
     )
 
     get_logger().info(f"✓ Created rollout sharing")
@@ -136,7 +132,6 @@ def main():
         gdrive_rollout_sharing=rollout_sharing,
         node_id=node_id,
         experiment_name=experiment_name,
-        rollout_publish_frequency=rollout_publish_frequency,
         fetch_max_peers=10,
         fetch_timeout_seconds=30
     )

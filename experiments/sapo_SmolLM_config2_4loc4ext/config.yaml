@@ -1,5 +1,0 @@
-training.max_round: 50
-training.num_generations: 8
-training.num_train_samples: 4
-training.num_transplant_trees: 4
-training.seed: 42
