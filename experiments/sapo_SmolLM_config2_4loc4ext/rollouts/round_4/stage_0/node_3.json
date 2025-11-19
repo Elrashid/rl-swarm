@@ -1,0 +1,735 @@
+{
+  "peer_id": "node_3",
+  "round": 4,
+  "stage": 0,
+  "timestamp": 1763545846.967718,
+  "publish_frequency": "stage",
+  "rollouts": {
+    "316140316516708977910351480550593006827": [
+      {
+        "world_state": {
+          "environment_states": {
+            "question": "Given a square matrix, your job is to find the taxicab (Manhattan) distance of the nearest 0 for each cell.\n\nThe output should be a matrix of the same size as the input matrix, where each cell contains the distance to the nearest 0.\n\nFind the distance to the nearest 0 for each cell in the matrix below:\n1 1 1 1 1 1 0\n1 0 1 1 0 1 1\n1 1 1 1 1 1 1\n1 0 1 1 1 1 0\n1 0 1 1 1 0 1\n1 1 1 1 1 1 1\n0 1 1 1 1 1 1\n",
+            "answer": "2 1 2 2 1 1 0\n1 0 1 1 0 1 1\n2 1 2 2 1 2 1\n1 0 1 2 2 1 0\n1 0 1 2 1 0 1\n1 1 2 3 2 1 2\n0 1 2 3 3 2 3",
+            "metadata": {
+              "complexity": null,
+              "dataset_index": 0,
+              "difficulty": {
+                "complexity": null,
+                "n": [
+                  3,
+                  10
+                ],
+                "p_zero": 0.25,
+                "statements": null,
+                "vars": null
+              },
+              "example_answer": null,
+              "matrix": [
+                [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  0
+                ],
+                [
+                  1,
+                  0,
+                  1,
+                  1,
+                  0,
+                  1,
+                  1
+                ],
+                [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                [
+                  1,
+                  0,
+                  1,
+                  1,
+                  1,
+                  1,
+                  0
+                ],
+                [
+                  1,
+                  0,
+                  1,
+                  1,
+                  1,
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                [
+                  0,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ]
+              ],
+              "n": 7,
+              "premises": null,
+              "solution": [
+                [
+                  2,
+                  1,
+                  2,
+                  2,
+                  1,
+                  1,
+                  0
+                ],
+                [
+                  1,
+                  0,
+                  1,
+                  1,
+                  0,
+                  1,
+                  1
+                ],
+                [
+                  2,
+                  1,
+                  2,
+                  2,
+                  1,
+                  2,
+                  1
+                ],
+                [
+                  1,
+                  0,
+                  1,
+                  2,
+                  2,
+                  1,
+                  0
+                ],
+                [
+                  1,
+                  0,
+                  1,
+                  2,
+                  1,
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1,
+                  2,
+                  3,
+                  2,
+                  1,
+                  2
+                ],
+                [
+                  0,
+                  1,
+                  2,
+                  3,
+                  3,
+                  2,
+                  3
+                ]
+              ],
+              "source_dataset": "binary_matrix",
+              "source_index": 16,
+              "split": "train",
+              "variables": null
+            }
+          },
+          "opponent_states": null,
+          "personal_states": null
+        },
+        "actions": [
+          "The distance to the nearest 0 in each cell of a square matrix.\n\nHere is the Python implementation of the formula:\n\n```python\ndef distance_to_nearest_0(matrix):\n    n = len(matrix)\n    result = np.zeros(n)\n    for i in range(n):\n        nearest_neighbor = np.argmax(np.abs(matrix[i, :]))\n        result[i] = nearest_neighbor\n    return result\n```",
+          "**Step 1: Assign Cell Labels**\n\nAssign cell labels for each cell in the matrix:\n\n1 1 1 1 1 1 1\n1 0 1 1 0 1 1\n1 1 1 1 1 1 1\n1 0 1 1 1 0 1\n1 0 1 1 1 1 1\n1 1 1 1 1 1 1\n0 1 1 1 1 1 1\n\n**Step 2: Find Distance between Blank Area**\n\nFind the distance between the blank area (left/right or top/bottom) of the taxi cab and any cell that has a negative distance to a 1. A negative distance means the cell is inside the blank area.\n\nSince cell numbers are used, you can calculate the distance from the blank area to the closest 1 cell by adding the cell number to the address of the closest 1 cell.\n\nDistance to a cell cell = Distance of blank cell - Distance of cell\n\nFor example, if the blank area is (1,1), cell 1 is furthest",
+          "To find the taxicab distance of the nearest 0, iterate through the matrix and calculate the distance to each 0 cell.\n\nHere is an implementation of the function in Python:\n\n```python\ndef find_taxicab_distance_to_nearest_0(matrix):\n    taxicab_distance_to_nearest_0 = {}\n\n    for row in matrix:\n        for element in row:\n            taxicab_distance_to_nearest_0[element] = (matrix[row.index(element)][matrix.index(row)] - matrix[row.index(row)][matrix.index(row)])\n\n    return taxicab_distance_to_nearest_0\n```\n\nIn this implementation:\n- `find_taxicab_distance_to_nearest_0` is the function that calculates the distance to the nearest 0 cell.\n- It takes a matrix as input, where each cell is an integer.\n- It iterates through all cells in the matrix and calculates the distance to the nearest 0 cell.\n- It returns the distance to the nearest 0 as a dictionary.",
+          "Here is an example implementation in Python:\n\n```python\ndef find_nearest_zero(original, targets):\n    distances = {}\n\n    for target in targets:\n        cell = [original[i] for i in target]\n        nearest_distance = min(set(cell) & set(targets[0]), set(cell) & set(targets[1]), set(cell) & set(targets[2]), set(cell) & set(targets[3]))\n        distances[target] = nearest_distance\n\n    return distances\n```\n\nThis function takes a 2D matrix representing a cell and a list of targets. It iterates over each target cell in the matrix and calculates the nearest 0 for all addresses inside the cell. It solves a Kth-point optimization problem using a Frank-Wolfe algorithm, iterating through all available moves and evaluating the minimization problem for each action. The function returns a dictionary of the nearest 0 for each target.",
+          "To find the distance to the nearest 0 for each cell in the matrix, we can iterate through the matrix and calculate the distance to the nearest 0 for each cell using the Euclidean distance formula. We can store the calculated distances in a new matrix (traversing the matrix is expensive so we use the shortcuts).\n\nHere is the code:\n```python\ndef find_nearest_0(matrix):\n    distances = {}\n    for i in range(len(matrix)):\n        for j in range(len(matrix[0])):\n            if matrix[i][j] == 0:\n                distances[i, j] = math.sqrt((j - i) ** 2)\n    return distances\n```",
+          "Here's the Python code for the above steps:\n\n```python\ndef manhattanDistance(matrix):\n    result = [[0 for _ in range(len(matrix[0]))] for _ in range(len(matrix))]\n    for i in range(len(matrix)):\n        for j in range(len(matrix[0])):\n            if (i != j) and matrix[i][j] != 0:\n                result[i][j] = abs(matrix[i][j] - matrix[i][j])\n    return result\n```\n\nThe implementation iterates through each column of the matrix and calculates the distance to each cell. For each cell, it returns the distance from the column index to the nearest 0.",
+          "Here's how you can implement this in Python:\n\n```python\nfrom typing import List\nfrom collections import defaultdict\n\ndef distance_to_nearest_zero(matrix: List[List[int]]) -> List[int]:\n    nearest_zero_neighbors = defaultdict(list)\n    for row in range(len(matrix)):\n        for col in range(len(matrix[0])):\n            if 0 <= row < len(matrix) and 0 <= col < len(matrix[0]):\n                if matrix[row][col] == 0:\n                    nearest_zero_neighbors[matrix[row][col]].append((row, col))\n\n    nearest_zero_points = [n for (x, y) in nearest_zero_neighbors.keys()\n                                if [x, y] in matrix]\n    distances = []\n    for point in nearest_zero_points:\n        distances.append(abs(point[0] - 0) + abs(point[1] - 0))\n\n    return distances\n```\n\nThis implementation maintains a dictionary of neighbors, where the keys are list indices and the value is a corresponding list of indices. When finding the nearest zero, it calculates the distance from each point to",
+          "Here's a Python implementation using NumPy:\n\n```python\nimport numpy as np\n\ndef nearest_zero_distance(pattern):\n    distance = np.empty(len(pattern), dtype=int)\n    for i in range(len(pattern)):\n        offset = (pattern[i]-1) * (pattern[i+1] - 1) / 2\n        distance[i] = offset\n    return distance\n```\n\nThe `nearest_zero_distance` function takes a given pattern as input and returns the nearest 0 distance for each cell in the pattern.\n\nThe `offset` variable takes the absolute value of the difference in pixel coordinates between the current cell's pixel and the next cell being processed. This ensures that the current cell is considered the next cell for the next iteration.\n\nThe `return` statement of the `nearest_zero_distance` function returns a NumPy array `distance` with shape `(len(pattern), 1)` and then returns the first dimension of the array as the distance values. The other values are repeated as follows:\n\n- The second value is set to 0, because it directly connects to the next cell.\n- The third value is set to the `offset"
+        ],
+        "metadata": null
+      }
+    ],
+    "252259057270858491786835940455190475110": [
+      {
+        "world_state": {
+          "environment_states": {
+            "question": "The following question is a propositional logic reasoning question.\n\nIn the question we provide a list of premises. The task is to infer a correct conclusion from the premise.\n\nFORMAT INSTRUCTIONS:\n- Return the conclusion logic statement, as your final answer.\n- Use the following notation to denote symbols\n    - OR = \u2228\n    - AND = \u2227\n    - IMPLIES = \u2192\n    - IFF = \u2194\n    - NOT = \u00ac\n\nHere is the question:\nGiven:\n1. Q\n.2. Q\n.3. (P \u2228 Q)\n.What can we conclude from the above statements?",
+            "answer": null,
+            "metadata": {
+              "complexity": 3,
+              "dataset_index": 1,
+              "difficulty": {
+                "complexity": [
+                  1,
+                  3
+                ],
+                "n": null,
+                "p_zero": null,
+                "statements": [
+                  2,
+                  4
+                ],
+                "vars": [
+                  2,
+                  4
+                ]
+              },
+              "example_answer": "(R \u2228 Q)",
+              "matrix": null,
+              "n": null,
+              "premises": [
+                "Q",
+                "Q",
+                "(P \u2228 Q)"
+              ],
+              "solution": null,
+              "source_dataset": "propositional_logic",
+              "source_index": 17,
+              "split": "train",
+              "variables": [
+                "P",
+                "Q",
+                "R"
+              ]
+            }
+          },
+          "opponent_states": null,
+          "personal_states": null
+        },
+        "actions": [
+          "The question presents a statement that requires inference from a collection of premises. Assuming the validity of the premises, can we infer:\n\nQ: Determine the consequences of Q.\n\nWe have:\n1. Q: Begin the conclusion, and then add an claim of Q.\n2. \u2227 Q: Both the conceiver and the conclusion are reducible to Q.\n\nThe conclusion logically follows from Q: Q \u2192 Q. We can then say that the conclusion follows from the premises of the statement Q.\n\nFormula: \u2227 (P \u2227 ~ Q) \u2192 (P & ~ Q) \u21d4 P \u21d4 Q\n\n<Answer>Answer:\nThe conclusion logic statement is: \"Determine the consequences of X...\"",
+          "Answer:",
+          "Here's the code for the logic statement:\n\n>>> print(inference_statement('Q', '2. Q', '3. (P \u2228 Q)'))\n\u00acP \u2192 R\n\nYour code should pass the following assertions:\n```python\nassert inference_statement('P', '2. Q', '3. (P \u2228 Q) == \u2227(P \u2227 R)') == '\u00acP \u2192 R'\nassert inference_statement('R', 'P', 'P') == 'P'\n```",
+          "Based on the provided statement of usage:\n\n.2. Q\n\u2298 .3. (P \u2228 Q)\n, so the given statements are satisfied:\n\n'I can conclude from the above premises' denotes that there is a valid inference path from the premises to the conclusion, including the use of all our logical operators.\n\nimplying that the conclusion of the premises and the given statement of inference path can be inferred from each other.\n\nIn this sequence of logical operators, the 'AND' state machine may be present, which indicates that as long as the conclusion is true, if the premises are true, the given statement of the inference path is true.\n\nAccepting the premise of our question leads us to the conclusion of the answer to the question at hand, which is:\nThe given statement of inference path is true, and the conclusion is true.",
+          "Here is a possible solution:\n6. IMPLIES (P \u2228 Q) \u2192 IF G = \u2228 \u00ac G, WHEN IT FULFILLS IT COME TO ME WE CAN CONCLUDE that boolean TRUTH of P and Q and G is TRUE. VP = (P \u2228 Q) = (\u00ac P) \u21d4\u00ac Q, \u00ac G = (~ G) = \u222d so VP is TRUE.\n7. IMPLIES (P \u2228 Q) \u2192 IF G = \u2228 \u00ac G, WHEN IT FULFILLS IT COME TO ME WE CAN CONCLUDE that boolean TRUTH of P and Q and G is TRUE. VP = (P \u2228 Q) = (\u00ac P) \u21d4\u00ac Q, \u00ac G = (~ G) = \u222d so VP is TRUE.\n8. IMPLIES (P \u2228 Q) \u2192 IF G = \u2228 \u00ac G, WHEN IT FULFILLS IT COME TO ME WE CAN CONCLUDE that boolean TRUTH of P and Q and G is TRUE. VP = (P \u2228 Q) = (\u00ac P) \u21d4\u00ac Q, \u00ac",
+          "The question requires reasoning to draw a conclusion based on the provided premises. Here is how to approach this problem using propositional logic:\n\n1. Define the variables and constants involved in the question: \n    - 'Q': the propositional variable to be evaluated\n    - '.\"' -> inclusive sign indicating 'and' or 'or'\n    - ':.', '!'.' -> left () and right (), indicating negation\n    - '=P' -> identity\n    - '\u22a2`-> let p = P, q = P, i = P\n    - `\u2192 P\u21e3C\n \n2. Analyze the premises:\n   - Use the above notation to label the premises.\n   - The ':' symbol is used to separate first and second part of a logical expression.\n   - A '\u2192' flag indicates that the expression leads to the conclusion.\n   - A '-' flag indicates the edge case where the conditional is false\n \nHere is how the reasoning unfolds:\n    1. `\"Q #q\"` is equivalent to\n      negation of `(Q and q)` or\n      multiplication of `q` raised to the power of `q`:\n      (-> P\u21e3C)\n          * aspect (from `q",
+          "In this question, we are given three statements: 2, Q, and 1. 2 is true if and only if 3 is false or 2 is false if and only if 4 is true. Therefore, the conclusion for each of the three statements is logically equivalent.\n\nGiven that \u00ac\u2227\u21d2\u2228 (so that if both p and q are false, then p and q are true, and if p is true and q is true, then p and q are true) \u2192 \u2227 (YES) which is equivalent to \u00ac\u2227 PV MFM /; \u2265 0 /; (valid if and only if \u00ac\u2227 IFF and \u00ac\u2227 \u2227DEV; (<= 0 /;  and this is used to check XOR and NOT. The last line is also used to prove Horn's theorem.\n\nHorn's theorem is the inverse of the assumption that \u00ac\u2227induces the negation of theConjunction.\n\nUsing this information, we can conclude from the premise that conjunctions express either of the following properties:\nQ: 2 \u2192 3\nand (Grammar) -> Q\nand (Show) -> Q",
+          "To follow the information given in the question, we can formulate a formal proof:\n\nP(1) \u21d4 ? ? P(2)\nP(2) \u21d4 ? ? P(3) \nP(3) \u21d4 ? ? P(4) \u2227 ? P(5)\n\nFrom all of the premises, we can conclude that:\n\nP(1) \u21d4 ? ? P(2) \u00a0 \u00a0 \u00a0 \u00a0 This has been proven.\nP(2) \u21d4 ? ? P(3) \u00a0 \u00a0 \u00a0 \u00a0 This has been proven.\nP(3) \u21d4 ? ? P(4)  , where ? ? P(5) \u00a0 \u00a0 \u00a0 \u00a0 Implies Q, this is the conclusion.\nP(4) implies Q, which means that Q implies \"anap \"[!\", is dream\"?  \"yes\" = mc!\n\nThis implies that \"anap\" = \"dreams\" gibber'as Kun\".\n\nHowever, Kun's logic operations are not practical. However, if we take the above conclusion to construct a disjunction of multiple premises into a"
+        ],
+        "metadata": null
+      }
+    ],
+    "23520162036645955781867079221208984984": [
+      {
+        "world_state": {
+          "environment_states": {
+            "question": "Given a square matrix, your job is to find the taxicab (Manhattan) distance of the nearest 0 for each cell.\n\nThe output should be a matrix of the same size as the input matrix, where each cell contains the distance to the nearest 0.\n\nFind the distance to the nearest 0 for each cell in the matrix below:\n1 1 1 1 0 1 1 1 1\n0 1 0 0 1 1 1 1 1\n1 1 1 1 1 0 1 0 0\n1 0 0 1 1 1 1 1 1\n1 1 1 1 0 1 1 1 1\n1 1 0 1 1 0 1 1 1\n1 1 1 1 1 1 1 1 1\n1 1 1 1 0 1 1 1 0\n1 1 1 0 1 1 1 1 1\n",
+            "answer": "1 2 1 1 0 1 2 2 2\n0 1 0 0 1 1 2 1 1\n1 1 1 1 1 0 1 0 0\n1 0 0 1 1 1 2 1 1\n2 1 1 1 0 1 2 2 2\n2 1 0 1 1 0 1 2 2\n3 2 1 2 1 1 2 2 1\n4 3 2 1 0 1 2 1 0\n3 2 1 0 1 2 3 2 1",
+            "metadata": {
+              "complexity": null,
+              "dataset_index": 2,
+              "difficulty": {
+                "complexity": null,
+                "n": [
+                  3,
+                  10
+                ],
+                "p_zero": 0.25,
+                "statements": null,
+                "vars": null
+              },
+              "example_answer": null,
+              "matrix": [
+                [
+                  1,
+                  1,
+                  1,
+                  1,
+                  0,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                [
+                  0,
+                  1,
+                  0,
+                  0,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  0,
+                  1,
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0,
+                  0,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                [
+                  1,
+                  1,
+                  1,
+                  1,
+                  0,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                [
+                  1,
+                  1,
+                  0,
+                  1,
+                  1,
+                  0,
+                  1,
+                  1,
+                  1
+                ],
+                [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                [
+                  1,
+                  1,
+                  1,
+                  1,
+                  0,
+                  1,
+                  1,
+                  1,
+                  0
+                ],
+                [
+                  1,
+                  1,
+                  1,
+                  0,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ]
+              ],
+              "n": 9,
+              "premises": null,
+              "solution": [
+                [
+                  1,
+                  2,
+                  1,
+                  1,
+                  0,
+                  1,
+                  2,
+                  2,
+                  2
+                ],
+                [
+                  0,
+                  1,
+                  0,
+                  0,
+                  1,
+                  1,
+                  2,
+                  1,
+                  1
+                ],
+                [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  0,
+                  1,
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0,
+                  0,
+                  1,
+                  1,
+                  1,
+                  2,
+                  1,
+                  1
+                ],
+                [
+                  2,
+                  1,
+                  1,
+                  1,
+                  0,
+                  1,
+                  2,
+                  2,
+                  2
+                ],
+                [
+                  2,
+                  1,
+                  0,
+                  1,
+                  1,
+                  0,
+                  1,
+                  2,
+                  2
+                ],
+                [
+                  3,
+                  2,
+                  1,
+                  2,
+                  1,
+                  1,
+                  2,
+                  2,
+                  1
+                ],
+                [
+                  4,
+                  3,
+                  2,
+                  1,
+                  0,
+                  1,
+                  2,
+                  1,
+                  0
+                ],
+                [
+                  3,
+                  2,
+                  1,
+                  0,
+                  1,
+                  2,
+                  3,
+                  2,
+                  1
+                ]
+              ],
+              "source_dataset": "binary_matrix",
+              "source_index": 18,
+              "split": "train",
+              "variables": null
+            }
+          },
+          "opponent_states": null,
+          "personal_states": null
+        },
+        "actions": [
+          "To find the nearest 0 for each cell in a given matrix, we can use a simple geometric approach. Let `i` denote the row index, `j` be the column index, and `u` be the center of the cell. The nearest 0 is the cell along the row `u` and column `j` where the distance to the nearest 0 is the minimum. We can define a distance function `distance` as follows:\n\n`distance(row, col, u, j)` returns the distance between the cell at row `u` and column `j` along the row axis.\n\n```python\ndef nearest_0(matrix):\n    def distance(row, col, u, j):\n        return op.sqrt(matrix[u][row] - matrix[row][u])\n\n    return op.stack.empty()\n```",
+          "Here's a step-by-step approach to finding the distances of the nearest 0:\n\n1. Choose a starting point by selecting a cell that is closer to the origin (0, 0). This cell is located at index [0], which is the cell that the number 0 is closest to.\n2. Draw a diagonal line from the starting point to the cell with the largest absolute value of x, y (i.e., the cell that has the x-coordinate (0, 0) closest to it).\n3. Find the distance between the bottom right fringe of the diagonal line and the starting point. This is the distance to the nearest 0.\n4. Repeat this process for all points on the line that connect the starting point to the nearest 0.\n\nHere's the Python code to implement the above steps:\n```python\ndef find_nearest_zeros(matrix, starting_point):\n    empty_borders = set()\n    nearest_zeros = {}\n\n    for i in range(len(matrix)):\n        for j in range(len(matrix)):\n            x, y = matrix[i][j], matrix[j][i]\n            if x > 0 and abs(x) >",
+          "Step-by-step approach for computing the nearest$$_0$$:\n\nI. Finding rows 1 and 5 whose cells are 0\n\nBy symmetry, the cell being maximum is first whole. Therefore, the row index of the cell having the maximum value in the matrix above / below the matrix.\n\nWe can formalize this by:\n\nA[n-1]>=A[n-1][n-1]\n=>Maxix[n-2] >=Maxix[n-2][n-1]\n=>1>=1\n\nB[0]>=B[1]\n=>1-1>=1\n\nThese results are non-negative and, therefore, we find the first complete row of the matrix, where all equal rows have non-negative values.\n\nII. Finding rows 2 and 3 whose cells are 0\n\nWe can further proceed by computing the square of the absolute value of the cell being maximum.\n\nGiven the similarity of the previous row, extracting the minimum with a small value and the maximum value, we can find the corresponding square of the absolute value of the cell being maximum in the matrix.\n\nWe can formally describe this",
+          "To find the ratio of the distance to the nearest 0 for each cell in the matrix, you can use the Manhattan distance formula, which is based on the Pythagorean theorem.\n\nThe Manhattan distance formula is:\n\ndist = |a11| + |a12| + |a21| + |a22|\n\nWhere a11, a12, a21, and a22 are the distance of the cell to the nearest 0, x1, x2, and y1 are the other two cells, respectively.\n\nThe average distance of the nearest 0 is calculated by taking the sum of the distances of the cells and dividing it by the number of cells. This means the average distance is the midpoint of a cell with a distance greater than x1 and less than x2 and y1.\n\nIf the input matrix has an odd number of rows and columns, the average distance should be the middle distance in each row.\n\nHere's how you can implement this function in Python using nested for loops:\n\n```python\ndef calculate_nearest_zeros(matrix):\n    num_rows, num_cols = len(matrix), len(matrix[0])\n    nearest",
+          "Use a Python function to find the distance of nearest 0 in a matrix.\n\nThe function should take a square matrix as input and return the distance of the nearest 0 to the top-left corner in the matrix. The matrix should be square.\n\nHere is a possible implementation:\n\n```python\nimport math\n\ndef nearest_0_distance(matrix):\n    rows = len(matrix)\n    cols = len(matrix[0])\n    nearest_0_row = rows // 2\n    nearest_0_col = cols // 2\n    closest_distance = 1000000000000\n    closest_neighbor = 0\n    for col in range(cols):\n        if col == nearest_0_col and matrix[nearest_0_row][col] == 1:\n            distance = rows\n        elif col == mid_row and matrix[nearest_0_row][col] == 0:\n            distance = cols\n        elif row_index == nearest_0_row:\n            distance = min(rows, cols - nearest_0_col)\n        else:\n            distance = min(nearest_0_row + width, max(nearest_0_col +",
+          "To find the distance to the nearest 0 for each cell in a square matrix, you can follow these steps:\n\n1. For the first row, subtract the minimum value from each cell value, and the first column, subtract the maximum value.\n2. For the second row, the_next_column, subtract the minimum value from each cell value.\n3. For the next row, the next column, subtract the maximum value from each cell value.\n4. Repeat the process for each cell value in the second, third, and subsequent rows.\n5. Average the distances in each row and column using the `np.mean` function to compute the distance.\n\nHere's how you can implement this within Python:\n\n```python\nimport numpy as np\n\ndef find_nearest_zeros(mat):\n    N, M = mat.shape\n    distances = np.array([np.maximum(np.minimum(m, n) - cell_value)\n                       for m in range(M) for n in range(N) if m != N - 1 and n != M - 1])\n\n    return distances.mean(axis=1)\n```",
+          "Here is the implementation of the Python function `nearest_0` that calculates the taxicab distance of the nearest 0 for each cell in a matrix:\n\n```python\ndef nearest_0(matrix):\n    matrix.fill(0)  # Free all cells to have a distance of 0\n    quantity = matrix.count(0)  # Count the number of cells with a 0 in a row\n    matrix_temp = matrix.copy()  # Create a mirror copy of the matrix\n    distance_columns = matrix_temp.count(0)  # Count the number of cellular coordinates with a 0 in each column\n    neighbors_count = 0\n\n    for column in range(len(matrix_temp)):\n        for row_num in range(len(matrix_temp[0])):\n            neighbors_count += matrix_temp[(column + 1) * row_num] + polynomial_fits\n```",
+          "To find the distance to the nearest 0 for each cell, you can first identify the closest 0 rows and columns from the matrix. Then, you can calculate the distance-regular RT tensor for each cell using the formulas:\n\n1. Add the 1s along the cell coordinates.\n2. Find the cell composition.\n3. Calculate the 1s along the cell composition coordinates.\n4. Subtract 1s from the cell combination.\n\nThe output should be a matrix of the same size as the input matrix, where each cell contains the distance to the nearest 0 if the cell is equal to 1.\n\nHere's the Python code that implements the above-mentioned expressions:\n\n```python\ndef generate_nearest_0_distance_to_nearest(grid):\n    num_rows = len(grid)\n    num_cols = len(grid[0])\n    if num_rows == 0:\n        print('Error: No 0s found in the input matrix.')\n        return None\n    if num_cols == 0:\n        print('Error: No 0s found in the input matrix.')\n        return None\n\n    row_start_col = 0\n    col_start_row ="
+        ],
+        "metadata": null
+      }
+    ],
+    "146786504387817241226994629882785716427": [
+      {
+        "world_state": {
+          "environment_states": {
+            "question": "Given a square matrix, your job is to find the taxicab (Manhattan) distance of the nearest 0 for each cell.\n\nThe output should be a matrix of the same size as the input matrix, where each cell contains the distance to the nearest 0.\n\nFind the distance to the nearest 0 for each cell in the matrix below:\n1 1 1 1 0 1 1 1 1\n0 1 1 1 1 0 0 0 1\n1 1 1 1 1 0 0 1 1\n1 0 1 1 1 1 1 0 1\n0 0 1 1 1 1 1 1 1\n1 1 1 0 1 1 1 1 1\n0 0 0 1 1 1 1 0 1\n1 1 0 1 0 1 1 1 1\n1 1 0 1 1 0 1 0 1\n",
+            "answer": "1 2 2 1 0 1 1 1 2\n0 1 2 2 1 0 0 0 1\n1 1 2 2 1 0 0 1 2\n1 0 1 2 2 1 1 0 1\n0 0 1 1 2 2 2 1 2\n1 1 1 0 1 2 2 1 2\n0 0 0 1 1 2 1 0 1\n1 1 0 1 0 1 2 1 2\n2 1 0 1 1 0 1 0 1",
+            "metadata": {
+              "complexity": null,
+              "dataset_index": 3,
+              "difficulty": {
+                "complexity": null,
+                "n": [
+                  3,
+                  10
+                ],
+                "p_zero": 0.25,
+                "statements": null,
+                "vars": null
+              },
+              "example_answer": null,
+              "matrix": [
+                [
+                  1,
+                  1,
+                  1,
+                  1,
+                  0,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                [
+                  0,
+                  1,
+                  1,
+                  1,
+                  1,
+                  0,
+                  0,
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  0,
+                  0,
+                  1,
+                  1
+                ],
+                [
+                  1,
+                  0,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  0,
+                  1
+                ],
+                [
+                  0,
+                  0,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                [
+                  1,
+                  1,
+                  1,
+                  0,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  1,
+                  1,
+                  1,
+                  1,
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1,
+                  0,
+                  1,
+                  0,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                [
+                  1,
+                  1,
+                  0,
+                  1,
+                  1,
+                  0,
+                  1,
+                  0,
+                  1
+                ]
+              ],
+              "n": 9,
+              "premises": null,
+              "solution": [
+                [
+                  1,
+                  2,
+                  2,
+                  1,
+                  0,
+                  1,
+                  1,
+                  1,
+                  2
+                ],
+                [
+                  0,
+                  1,
+                  2,
+                  2,
+                  1,
+                  0,
+                  0,
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1,
+                  2,
+                  2,
+                  1,
+                  0,
+                  0,
+                  1,
+                  2
+                ],
+                [
+                  1,
+                  0,
+                  1,
+                  2,
+                  2,
+                  1,
+                  1,
+                  0,
+                  1
+                ],
+                [
+                  0,
+                  0,
+                  1,
+                  1,
+                  2,
+                  2,
+                  2,
+                  1,
+                  2
+                ],
+                [
+                  1,
+                  1,
+                  1,
+                  0,
+                  1,
+                  2,
+                  2,
+                  1,
+                  2
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  1,
+                  1,
+                  2,
+                  1,
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1,
+                  0,
+                  1,
+                  0,
+                  1,
+                  2,
+                  1,
+                  2
+                ],
+                [
+                  2,
+                  1,
+                  0,
+                  1,
+                  1,
+                  0,
+                  1,
+                  0,
+                  1
+                ]
+              ],
+              "source_dataset": "binary_matrix",
+              "source_index": 19,
+              "split": "train",
+              "variables": null
+            }
+          },
+          "opponent_states": null,
+          "personal_states": null
+        },
+        "actions": [
+          "To find the distance to the nearest 0 for each cell, you can subtract each cell value from its adjacent cell value. This will give you a row vector of each cell's distance to the nearest 0.\n\nTo convert this vector to a matrix, you can use the following formula:\n\n`distance_to_nearest_zero_matrix[i][j] = row_vector[i] - row_vector[n-1][j]`\n\nwhere `distance_to_nearest_zero_matrix[i][j]` is the distance to the nearest 0, and `n` is the number of neighboring cells.\n\nHere is a Python function that implements this approach:\n\n```python\ndef distance_to_nearest_zero_matrix(matrix: list) -> list:\n    \"\"\"\n    Given a square matrix, find the distance to the nearest 0 for each cell in the matrix.\n    \"\"\"\n    distance_to_nearest_zero_matrix = []\n\n    for i in range(len(matrix)):\n        row_vector = []\n        for j in range(len(matrix[i])):\n            row_vector.append(matrix[i][j])\n\n        distance_to_nearest_",
+          "Here is a possible solution:\n\nTo find the taxicab distance to the nearest 0, we can use a binary search algorithm to quickly locate the nearest 0 in the matrix.\n\nHere is the code:\n\n```python\ndef find_taxicab_distance(matrix):\n    min_distance = float('inf')\n    nearest_0_distance = float('inf')\n    row, col = master_matrix.shape\n    for i in range(row):\n        for j in range(col):\n            if master_matrix[i][j] == 0:\n                distance = abs(master_matrix[i][col] - master_matrix[row-i+1][col])\n                if distance < min_distance:\n                    min_distance = distance\n                    nearest_0_distance = row - i\n            elif master_matrix[i][j] == 1:\n                distance = abs(master_matrix[row-i+1][col] - master_matrix[i][col] - master_matrix[row-i+1][col] / 2)\n                if distance < min_distance:\n                    min_distance = distance\n                    nearest_0_distance = row - i\n    return nearest",
+          "To find the taxicab distance of the nearest 0 to a cell in a matrix, we can use a recursive approach. The function should take a list of matrices, a matrix key, and a matrix cell key. Then, it should pass the matrix key and the matrix cell key to a helper function, which performs the following steps:\n\n1. Determine the cell ID: Use the provided matrix key to find the cell ID using the following formula: cellId = key % 32.\n2. Extracted coordinates: Extract the cell coordinates from each matrix.\n3. Calculate the taxicab distance: Calculate the taxicab distance between the cell ID and the cell's coordinate.\n\nHere is the implementation of the taxicab distance formula:\n\n```python\ndef computeTaxicabDistant(matrix, cellKey, cell):\n    taxICount = 0\n    cellCoord = cellKey % 32\n    taxICount += taxICount * cellKey % 32 * 2\n    taxicabDistance = taxICount\n    for cellX in range(len(matrix)):\n        for cellY in range(len(matrix[cellX])):\n            taxICount += (0 if (cell",
+          "To find the minimum distance to the nearest 0, you can define a distance metric (e.g., Euclidean distance) on the 0 vector. Then you can iterate over the matrix and calculate the minimum distance between each 0 vector and its nearest minimum distance.\n\nHere is an example implementation in Python:\n\n```python\ndef minimum_distance_to_nearest_0(matrix: list[list[int]]) -> list[list[int]]:\n    min_distance = float('inf')\n    nearest_nearest_0 = float('inf')\n    max_value = float('-inf')\n    for row in matrix:\n        nearest_nearest_0 = float('inf')\n        for value in row:\n            nearest_nearest_0 = min(nearest_nearest_0, value)\n        distance = 0\n\n            # Count distance to nearest 0 (nearest function found)\n            if distance < 0:\n                nearest_nearest_0 = abs(value)\n                min_distance = min(min_distance, value)\n                max_value = max(max_value, value)\n\n        distance = 0\n        for value in range(len(row)):\n            distance += matrix[row[value]][val] - nearest_nearest",
+          "Here's the implementation of the function in Python:\n\n```python\ndef get_nearest_0(matrix):\n    nearest_0 = {}\n    for i in range(matrix.shape[1]):\n        for j in range(matrix.shape[0]):\n            nearest_0[i, j] = distance_to_nearest_sense(matrix, [i, j])\n    return list(nearest_0.values())\n\ndef distance_to_nearest_sense(matrix: np.ndarray, [i, j]):\n    num_cells = matrix.shape[0] * matrix.shape[1]\n    cell1 = matrix [i]\n    cell2 = matrix [j]\n    num_nearest_cells = num_cells // 2\n    num_cells = num_cells - 1\n    cells_to_nearest_sense = []\n    sum_coords = 0\n    for i2 in range(num_cells - 2, -1, -num_cells):\n        sum_coords += cells_to_nearest_sense[i - i2 + 1]\n        if sum_coords % num_nearest_cells == 0:\n            cells_to_nearest_sense.append((i",
+          "To solve this problem, we can use a nested loop to iterate through each cell in the matrix and calculate the distance to zero. For each cell, we'll need to find the nearest 0 and calculate the distance to this nearest 0.\n\nHere's how we can solve it using Python:\n\n```python\ndef get_nearest_zeros(matrix):\n    distance = [[0] * len(matrix) for _ in range(len(matrix[0]))]\n    for i in range(len(matrix)):\n        for j in range(len(matrix[0])):\n            if matrix[i][j] == 0:\n                closer_to_zero = find_closer_to_zero(matrix, i, j)\n                distance[i][j] = calculate_distance(matrix, i, j, closer_to_zero)\n    return distance\n\ndef find_closer_to_zero(matrix, i, j):\n    closest_distance = float('inf')\n    for j_index in range(-1, len(matrix[0]) - 1):\n        for k_index in range(-1, len(matrix) - 1):\n            if i + k_index <= len",
+          "Here is a Python function that implements this approach:\n\n```python\ndef get_mahto_distance(matrix, sir):\n    m, n = len(matrix), len(matrix[0])\n    di = [[[x for i in range(n) if sir[i] == 0]] for x in range(m)]\n    mh, mn = m, n\n    for i in range(m):\n        for j in range(n):\n            di[i][j] = [[matrix[i][j], mi] for mi in di[i][j]]\n    return di[m][mn]\n```\n\nThis function takes a 2D matrix `matrix` and an adjacency matrix ` sir` as input, and returns the distance matrix `d` as output.\n\nThe input `matrix` is represented as a list or matrix in the format `[[value, value,][value, value,][value, value,][value, value,][value, value,][value, value,][value, value,][value, value,][value, value,][value, value,][value, value,][value, value,][value, value,][value,",
+          "To find the taxicab distance, you can calculate the Euclidean distance between each cell and a fixed \"origin\" cell. The origin cell is marked as \"0\".\n\nHere's how you can iterate over each cell in the matrix:\n\n```python\ndef taxicabDistance(matrix):\n    taxicabDistMatrix = [[0] * len(matrix) for _ in range(len(matrix))]\n    taxicabDistMatrix[len(matrix) - 1][len(matrix[0]) - 1] = matrix[len(matrix) - 1][len(matrix[0]) - 1]\n    for i in range(len(matrix)):\n        for j in range(len(matrix[0])):\n            taxicabDistMatrix[i][j] = euclideanDistance(i, j, matrix)\n    return taxicabDistMatrix\n\ndef euclideanDistance(x1, y1, x2, y2):\n    return ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5\n```\n\nThe `taxicabDistance` function takes a 2D matrix, finds the distance to the"
+        ],
+        "metadata": null
+      }
+    ]
+  }
+}
